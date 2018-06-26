@@ -1,0 +1,4 @@
+SANITY_VERSION 1
+TMPDIR /home/arturo/poky-rocko/rpi/build/tmp
+SSTATE_DIR /home/arturo/poky-rocko/rpi/build/sstate-cache
+NATIVELSBSTRING ubuntu-18.04
