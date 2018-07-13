@@ -4,13 +4,14 @@ import time
 sense = SenseHat()
 sense.low_light = True
 
-green = (0, 255, 0)
+
 yellow = (255, 255, 0)
 blue = (0, 0, 255)
 red = (255, 0, 0)
-white = (255,255,255)
+green = (0, 255, 0)
 nothing = (0,0,0)
 pink = (255,105, 180)
+white = (255,255,255)
 
 def figureOk():
     G = green

@@ -45,3 +45,7 @@ sudo apt-get install libreadline-dev
 sudo apt-get install python-bluez
 sudo apt-get install python-pip
 sudo pip install bluepy
+
+#WORKINGGGGGGGGGGGGGG
+sudo sh start-beacon.sh
+sudo python testscan.py

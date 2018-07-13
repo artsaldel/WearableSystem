@@ -38,11 +38,10 @@ class Beacon:
     def __eq__(self, other):
         return self.mac == other.mac and self.uuid == other.uuid and self.major == other.major and self.minor == other.minor
     
-    def __hash__(self): 
-        return hash('{}{}{}{}'.format(self.mac, self.uuid, self.major, self.minor))
+    def __hash__(self): return hash('{}{}{}{}'.format(self.mac, self.uuid, self.major, self.minor))
     
     def __repr__(self):
-        return 'mac: {}; rssi: {}'.format(self.mac, self.rssi)
+        return '{"mac": "{}", "rssi": "{}"}'.format(self.mac, self.rssi)
 
 def to_char(c, signed=False):
     if type(c) is int:
