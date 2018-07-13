@@ -1,0 +1,54 @@
+
+**********Raspbian credentials:
+	username = pi
+	pass = raspberry
+
+
+**********Wifi interfaces (/etc/network/interfaces):
+
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+
+auto wlan0
+iface wlan0 inet dhcp
+        wireless_mode managed
+        wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+
+
+
+**********Wifi connection (/etc/wpa_supplicant/wpa_supplicant.conf):
+
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=CR
+
+network={
+    key_mgmt=WPA-PSK
+    ssid="Artsaldel"
+    psk="tsdelgado1986"
+}
+
+
+**********Autologin (/etc/systemd/system/getty@tty1.service.d/autologin.conf)
+
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin pi --noclear %I 38400 linux
+
+
+
+*********SSH
+crear un archivo en boot llamado "ssh"
+
+ssh pi@192.168.0.XX
+password = raspberry
+
+
+
+*********Installing sense-hat
+sudo apt-get update
+sudo apt-get install sense-hat

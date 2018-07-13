@@ -5,5 +5,6 @@ git clone -b rocko git://git.openembedded.org/meta-openembedded
 git clone -b rocko https://github.com/meta-qt5/meta-qt5
 git clone -b rocko git://git.yoctoproject.org/meta-security
 git clone -b rocko git://git.yoctoproject.org/meta-raspberrypi
+git clone -b rocko https://github.com/FrankBau/meta-raspberrypi-avg.git
 mkdir rpi
 git clone -b rocko git://github.com/jumpnow/meta-rpi

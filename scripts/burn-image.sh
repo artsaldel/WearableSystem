@@ -1,1 +1,1 @@
-sudo dd bs=4M if=rpi.img of=/dev/mmcblk0 conv=fsync
+sudo dd bs=4M if=rpi of=/dev/mmcblk0 conv=fsync
