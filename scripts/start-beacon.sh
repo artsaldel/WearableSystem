@@ -1,3 +1,4 @@
+sudo blescan
 sudo /etc/init.d/bluetooth start
 sudo python -c 'import sys,uuid;sys.stdout.write(uuid.uuid4().hex);print("")'
 sudo hciconfig hci0 up

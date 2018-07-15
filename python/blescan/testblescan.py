@@ -57,12 +57,12 @@ while True:
     print("----------")
     for beacon in returnedList:
         #print(beacon)
-	print("mac: " + beacon.mac)
-	print("rssi: " + beacon.rssi)
-	rssiValue = int(beacon.rssi)
-	if (rssiValue > -55):
-		print("Cerca")
-		sense.set_pixels(figureOk())
-	else:
-		print("Lejos")
-		sense.set_pixels(figureError())
+		print("mac: " + beacon.mac)
+		print("rssi: " + beacon.rssi)
+		rssiValue = int(beacon.rssi)
+		if (rssiValue > -55):
+			print("Cerca")
+			sense.set_pixels(figureOk())
+		else:
+			print("Lejos")
+			sense.set_pixels(figureError())
