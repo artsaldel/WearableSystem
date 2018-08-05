@@ -1,10 +1,23 @@
-Enable root autologin:
+		Enable root autologin /etc/inittab:
 
 1:12345:respawn:/sbin/mingetty --autologin root tty1
 
 
+		Wifi connection /etc/network/interfaces:
 
-Wifi interfaces:
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=NL
+
+network={
+    key_mgmt=WPA-PSK
+    ssid="GB_Trap"
+    psk="gb2jocco"
+}
+
+
+
+		Wifi interfaces /etc/wpa_config.conf:
 
 auto lo
 iface lo inet loopback
@@ -19,15 +32,15 @@ iface wlan0 inet dhcp
 
 
 
+		Enable I2C:
+To enable userspace access to I2C ensure that /etc/modules contains the following line:
+	i2c-dev
 
-Wifi connection:
+If an earlier release of the Raspbian Operating System is being used, create a file called 99-i2c.rules in directory /etc/udev/rules.d with the following content:
+	SUBSYSTEM=="i2c-dev", MODE="0666"
 
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-country=CR
 
-network={
-    key_mgmt=WPA-PSK
-    ssid="Artsaldel"
-    psk="tsdelgado1986"
-}
+To enable I2C ensure that /boot/config.txt contains the following lines:
+	dtparam=i2c_arm=on
+	dtparam=i2c_arm_baudrate=400000
+
