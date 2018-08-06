@@ -41,7 +41,7 @@ class Beacon:
         return hash('{}{}{}{}'.format(self.mac, self.uuid, self.major, self.minor))
     
     def __repr__(self):
-        return 'mac: {}; rssi: {}'.format(self.mac, self.rssi)
+        return 'uuid: {}; minor: {}; major: {}; mac: {}; rssi: {}'.format(self.uuid, self.minor, self.major, self.mac, self.rssi)
 
 def to_char(c, signed=False):
     if type(c) is int:

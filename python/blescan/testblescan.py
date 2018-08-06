@@ -1,45 +1,9 @@
-from sense_hat import SenseHat
+
 import blescan
 import sys
 import bluetooth._bluetooth as bluez
+import time
 
-sense = SenseHat()
-sense.low_light = True
-
-red = (255, 0, 0)
-green = (0, 255, 0)
-nothing = (0,0,0)
-
-def figureOk():
-    G = green
-    O = nothing
-    logo = [
-    O, O, O, O, O, O, O, O, 
-    O, O, O, G, G, O, O, O, 
-    O, O, G, G, G, G, O, O, 
-    O, G, G, G, G, G, G, O, 
-    O, G, G, G, G, G, G, O, 
-    O, O, G, G, G, G, O, O, 
-    O, O, O, G, G, O, O, O, 
-    O, O, O, O, O, O, O, O, 
-    ]
-    return logo
-    
-    
-def figureError():
-    R = red
-    O = nothing
-    logo = [
-    R, R, O, O, O, O, R, R,
-    R, R, R, O, O, R, R, R,
-    O, R, R, R, R, R, R, O,
-    O, O, R, R, R, R, O, O,
-    O, O, R, R, R, R, O, O,
-    O, R, R, R, R, R, R, O,
-    R, R, R, O, O, R, R, R,
-    R, R, O, O, O, O, R, R
-    ]
-    return logo
 
 dev_id = 0
 try:
@@ -52,17 +16,15 @@ except:
 blescan.hci_le_set_scan_parameters(sock)
 blescan.hci_enable_le_scan(sock)
 
+seconds = 0
 while True:
-    returnedList = blescan.parse_events(sock, 1)
-    print("----------")
-    for beacon in returnedList:
-        #print(beacon)
-        print("mac: " + beacon.mac)
-        print("rssi: " + beacon.rssi)
+    print("--- Time = " + str(seconds))
+    beaconList = blescan.parse_events(sock, 50)
+    for beacon in beaconList:
+        macAddress = str(beacon.mac)
         rssiValue = int(beacon.rssi)
-        if (rssiValue > -55):
-            print("Cerca")
-            sense.set_pixels(figureOk())
-        else:
-            print("Lejos")
-            sense.set_pixels(figureError())
+        if (rssiValue > -55 and macAddress == "43:45:c0:00:1f:ac"):
+            id = beacon.minor
+            print(id)
+    seconds += 1
+    time.sleep(1)
