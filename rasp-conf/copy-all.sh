@@ -5,3 +5,4 @@ cp inittab $route/etc
 cp interfaces $route/etc/network
 cp modules $route/etc
 cp wpa_supplicant.conf $route/etc
+cp start-wearable.sh $route/etc/init.d
