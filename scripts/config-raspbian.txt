@@ -24,12 +24,12 @@ iface wlan0 inet dhcp
 
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
-country=CR
+country=NL
 
 network={
     key_mgmt=WPA-PSK
-    ssid="Artsaldel"
-    psk="tsdelgado1986"
+    ssid="GB2_Trap"
+    psk="gb2jocco"
 }
 
 
