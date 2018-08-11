@@ -46,9 +46,7 @@ def GetGyroscopeData():
     return dataGyroscope
 
 def CleanResults():
-    global dataAccelerometer
-    global dataMagnetometer
-    global dataGyroscope
+    global dataAccelerometer, dataMagnetometer, dataGyroscope
     dataAccelerometer = []
     dataMagnetometer = []
     dataGyroscope = []
