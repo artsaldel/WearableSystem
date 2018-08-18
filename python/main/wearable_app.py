@@ -1,6 +1,7 @@
 import os
 import time
 import math
+import blescan
 import threading
 from sense_hat import SenseHat
 
@@ -8,12 +9,12 @@ from sense_hat import SenseHat
 # Change as needed
 raspID = 0
 globalFrequency = 1 #Hz
-sensorsFrequency = 20 #Hz
+sensorsFrequency = 2 #Hz
 #********************************************************
 
 # Global variables for information
-neighborsData = ""
-senseHatData = ""
+neighborsData = '"Neighbors" : []'
+senseHatData = '"Accelerometer" : [], "Magnetometer" : [], "Gyroscope" : []'
 
 # Raspberry local time
 localTime = 0
@@ -38,10 +39,8 @@ def SetSensorData(lock):
 def SetNeighbors(lock):
 	while(True):
 		global neighborsData
-		neighbors = [localTime,2,3,4]
-		with lock:
-			neighborsData = '"Neighbors" : [%s]' % (str(neighbors))
-		time.sleep(float(1.0/globalFrequency))
+		neighbors = blescan.GetNearBeacons(globalFrequency)
+		neighborsData = '"Neighbors" : [%s]' % (str(neighbors))
 
 # Get audio file using Alsa
 def SetAudioData(lock):
