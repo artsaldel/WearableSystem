@@ -1,0 +1,1 @@
+scp output_node2.json arturo@172.20.10.2:/home/arturo/Escritorio/WearableSystem/outputs

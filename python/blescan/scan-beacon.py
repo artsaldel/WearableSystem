@@ -25,14 +25,10 @@ blescan.EnableScan(sock)
 seconds = 0
 while True:
     print("------------ Time = " + str(seconds) + " ---------")
-    beaconList = blescan.GetNearBeacons(sock, 50)
+    beaconList = blescan.GetNearBeacons(sock, 70)
     for beacon in beaconList:
-        macAddress = str(beacon.mac)
+        minor = beacon.minor
         rssiValue = int(beacon.rssi)
-        id = beacon.minor
-        near = True
-        if (CalculateBeaconDistance(-45, rssiValue) > 2.0):
-            near = False
-        print(id + "->" + str(rssiValue) + " --- Cerca = " + str(near))
+        print("Id : " + str(minor) + ", RSSI : " + str(rssiValue) + ", Aproximate distance = " + str(CalculateBeaconDistance(-55, rssiValue)) + "m")
     seconds += 1
 

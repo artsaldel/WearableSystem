@@ -3,21 +3,29 @@ import time
 import math
 import blescan
 import threading
-import api_request
 import leds_configuration
 from sense_hat import SenseHat
 
 # Wearable configuration variables **********************
-# Change as needed
-raspID = 2
-lectureFrequency = int(api_request.GetLectureFrequencyValue())
-sensorsFrequency = int(api_request.GetSensorsFrequencyValue())
-isRpiActive = api_request.GetActiveValue()
+configuration = []
+with open("configuration.conf", "r") as text:
+    for line in text:
+    	value = line.split(":")[1].replace("\n","")
+        configuration.append(value)
+
+raspID = int(configuration[0])
+lectureFrequency = int(configuration[1])
+sensorsFrequency = int(configuration[2])
+isRpiActive = configuration[3]
 #********************************************************
 
 # Global variables for information
 neighborsData = '"Neighbors" : []'
 senseHatData = '"Accelerometer" : [], "Magnetometer" : [], "Gyroscope" : []'
+
+# Sense hat initialization
+sense = SenseHat();
+sense.set_imu_config(True, True, True)
 
 # Raspberry local time
 localTime = 0
@@ -26,16 +34,21 @@ localTime = 0
 def SetLocalConfiguration(lock):
 	global lectureFrequency, sensorsFrequency, isRpiActive
 	while(True):
-		lectureFrequency = int(api_request.GetLectureFrequencyValue())
-		sensorsFrequency = int(api_request.GetSensorsFrequencyValue())
-		isRpiActive = api_request.GetActiveValue()
+		configuration = []
+		with open("configuration.conf", "r") as text:
+		    for line in text:
+		    	value = line.split(":")[1].replace("\n","")
+		        configuration.append(value)
+		raspID = int(configuration[0])
+		lectureFrequency = int(configuration[1])
+		sensorsFrequency = int(configuration[2])
+		isRpiActive = configuration[3]
+		time.sleep(0.2)
 
 
 # Get sensors information using sense hat
 def SetSensorData(lock):
 	global senseHatData, sensorsFrequency
-	sense = SenseHat();
-	sense.set_imu_config(True, True, True)
 	while(True):
 		dataAccelerometer = []
 		dataMagnetometer = []
