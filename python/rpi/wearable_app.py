@@ -3,12 +3,13 @@ import time
 import math
 import blescan
 import threading
+import subprocess
 import leds_configuration
 from sense_hat import SenseHat
 
 # Wearable configuration variables **********************
 configuration = []
-with open("configuration.conf", "r") as text:
+with open("/home/root/configuration.conf", "r") as text:
     for line in text:
     	value = line.split(":")[1].replace("\n","")
         configuration.append(value)
@@ -28,22 +29,16 @@ sense = SenseHat();
 sense.set_imu_config(True, True, True)
 
 # Raspberry local time
-localTime = 0
+localRead = 0
 
 # Updating configuration variables from the API
-def SetLocalConfiguration(lock):
-	global lectureFrequency, sensorsFrequency, isRpiActive
+def ShowTime(lock):
 	while(True):
-		configuration = []
-		with open("configuration.conf", "r") as text:
-		    for line in text:
-		    	value = line.split(":")[1].replace("\n","")
-		        configuration.append(value)
-		raspID = int(configuration[0])
-		lectureFrequency = int(configuration[1])
-		sensorsFrequency = int(configuration[2])
-		isRpiActive = configuration[3]
-		time.sleep(0.2)
+		localTime = str(subprocess.Popen("date", stdout=subprocess.PIPE, shell=True).communicate()[0].replace("\n","").split(" ")[3].split(":")[2])
+		#print(localTime)
+		sense.show_message(localTime)
+		#time.sleep(1)
+
 
 
 # Get sensors information using sense hat
@@ -78,24 +73,26 @@ def SetAudioData(lock):
 
 # Start the wearable to adquire information
 def SetOutput(lock):
-	global lectureFrequency, neighborsData, senseHatData, localTime, isRpiActive
+	global lectureFrequency, neighborsData, senseHatData, localRead, isRpiActive
 	outputName = "output_node" + str(raspID) + ".json"
 	jsonData = open(outputName,"w+")
 	while(True):
 		if(isRpiActive == "False"):
-			leds_configuration.SetLedsNotOk()
+			i=0
+			#leds_configuration.SetLedsNotOk()
 		else:
-			leds_configuration.SetLedsOk()
+			#leds_configuration.SetLedsOk()
 			time.sleep(float(1.0/lectureFrequency))
 			with lock:
-				if(localTime != 0):
-					outputData = '{"Local time" : %d, "Node id" : %d, "Application data" : {%s,%s} }' % (localTime, raspID, str(neighborsData), str(senseHatData))
+				if(localRead != 0):
+					localTime = str(subprocess.Popen("date", stdout=subprocess.PIPE, shell=True).communicate()[0].replace("\n",""))
+					outputData = '{"Local time" : "%s", "Node id" : %d, "Application data" : {%s,%s} }' % (localTime, raspID, str(neighborsData), str(senseHatData))
 					jsonData.write(outputData + ",")
-				localTime += 1
+				localRead += 1
 
 # Declaring all the threads
 lock = threading.Lock()
-thread0 = threading.Thread(target = SetLocalConfiguration, name = " 0", args=(lock,))
+thread0 = threading.Thread(target = ShowTime, name = " 0", args=(lock,))
 thread1 = threading.Thread(target = SetOutput, name = " 1", args=(lock,))
 thread2 = threading.Thread(target = SetSensorData, name = " 2", args=(lock,))
 thread3 = threading.Thread(target = SetNeighbors, name = " 3", args=(lock,))
