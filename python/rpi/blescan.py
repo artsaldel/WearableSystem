@@ -26,7 +26,7 @@ class Beacon:
         return hash('{}{}{}{}'.format(self.mac, self.uuid, self.major, self.minor))
     
     def __repr__(self):
-        return '{"Node id": %s, "RSSI": %s, "Approximate distance": %s}' % (str(self.minor), str(self.rssi), str(MeasureBeaconDistance(TX_POWER, int(self.rssi))))
+        return '{"Node id": %s, "RSSI": %s}' % (str(self.minor), str(self.rssi))
 
 def ToChar(c, signed=False):
     if type(c) is int:
@@ -107,12 +107,6 @@ def ScanBeacons(sock, ctdr):
                             results.append(b)
     sock.setsockopt( bluez.SOL_HCI, bluez.HCI_FILTER, old_filter )
     return results
-
-def MeasureBeaconDistance(txPower, rssi):
-    ratio_db = float(txPower - rssi)
-    ratio_linear = float(math.pow(10, float(ratio_db/10)))
-    distance = float(math.sqrt(ratio_linear))
-    return distance
 
 def GetNearBeacons(seconds):
     dev_id = 0

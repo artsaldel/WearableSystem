@@ -3,57 +3,59 @@ import time
 import math
 import blescan
 import threading
-import subprocess
-import leds_configuration
+from datetime import datetime
 from sense_hat import SenseHat
 
-# Wearable configuration variables **********************
-configuration = []
-with open("/home/root/configuration.conf", "r") as text:
-    for line in text:
-    	value = line.split(":")[1].replace("\n","")
-        configuration.append(value)
+# Global variables
+global raspID, lectureFrequency,sensorsFrequency, sensorsFrequency
+global neighborsData, senseHatData, sense
 
-raspID = int(configuration[0])
-lectureFrequency = int(configuration[1])
-sensorsFrequency = int(configuration[2])
-isRpiActive = configuration[3]
-#********************************************************
-
-# Global variables for information
-neighborsData = '"Neighbors" : []'
-senseHatData = '"Accelerometer" : [], "Magnetometer" : [], "Gyroscope" : []'
-
-# Sense hat initialization
-sense = SenseHat();
-sense.set_imu_config(True, True, True)
-
-# Raspberry local time
-localRead = 0
 
 # Updating configuration variables from the API
 def ShowTime(lock):
 	while(True):
-		localTime = str(subprocess.Popen("date", stdout=subprocess.PIPE, shell=True).communicate()[0].replace("\n","").split(" ")[3].split(":")[2])
+		localTime = str(datetime.now()).replace(".",":")[:-3]
 		#print(localTime)
-		sense.show_message(localTime)
+		sense.show_message(str(raspID))
 		#time.sleep(1)
-
-
 
 # Get sensors information using sense hat
 def SetSensorData(lock):
-	global senseHatData, sensorsFrequency
-	while(True):
+	global lectureFrequency, sensorsFrequency, neighborsData, senseHatData, localRead, isRpiActive
+	outputName = "/home/root/output_node" + str(raspID) + ".json"
+	jsonData = open(outputName,"w+")
+	outputData = ""
+	localTime = 0
+	while(True and localTime < 10):
+		dataTime = []
 		dataAccelerometer = []
 		dataMagnetometer = []
 		dataGyroscope = []
-		for ctdr in range (0, sensorsFrequency):
+		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
+		for ctdr in range (1, sensorsFrequency + 1):
+			while( not( int((ctdr - 1)*(1000.0/sensorsFrequency)) <= localMiliseconds < int(ctdr*(1000.0/sensorsFrequency)) ) ):
+				try:
+					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
+				except:
+					pass
+			#inicio = str(datetime.now()).replace(".",":")[:-3]
+			dataTime.append(str(datetime.now()).replace(".",":")[:-3])
 			dataGyroscope.append(sense.get_gyroscope_raw())
 			dataMagnetometer.append(sense.get_compass_raw())
 			dataAccelerometer.append(sense.get_accelerometer_raw())
-        	time.sleep(float(1.0/sensorsFrequency))
-		senseHatData = '"Accelerometer" : [%s], "Magnetometer" : [%s], "Gyroscope" : [%s]' % (str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
+			senseHatData = '"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]\n' % (str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
+			#senseHatData = '"Time":[%s], "Accelerometer" : [%s], "Magnetometer" : [%s], "Gyroscope" : [%s]' % (str(dataTime), str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
+			#final = str(datetime.now()).replace(".",":")[:-3]
+			#print(inicio)
+			#print(final)
+			#print("")
+		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"Application data" : {\n%s,\n%s}\n},\n' % (str(dataTime[0]), raspID, str(neighborsData), str(senseHatData))
+		localTime += 1
+		if (localTime == 5):
+			jsonData.write(outputData)
+			localTime = 0
+			outputData = ""
+
 		
 # Get neighbors using BLE scanner
 def SetNeighbors(lock):
@@ -71,43 +73,47 @@ def SetAudioData(lock):
 			audio = True
 		time.sleep(float(1.0/lectureFrequency))
 
-# Start the wearable to adquire information
-def SetOutput(lock):
-	global lectureFrequency, neighborsData, senseHatData, localRead, isRpiActive
-	outputName = "output_node" + str(raspID) + ".json"
-	jsonData = open(outputName,"w+")
-	while(True):
-		if(isRpiActive == "False"):
-			i=0
-			#leds_configuration.SetLedsNotOk()
-		else:
-			#leds_configuration.SetLedsOk()
-			time.sleep(float(1.0/lectureFrequency))
-			with lock:
-				if(localRead != 0):
-					localTime = str(subprocess.Popen("date", stdout=subprocess.PIPE, shell=True).communicate()[0].replace("\n",""))
-					outputData = '{"Local time" : "%s", "Node id" : %d, "Application data" : {%s,%s} }' % (localTime, raspID, str(neighborsData), str(senseHatData))
-					jsonData.write(outputData + ",")
-				localRead += 1
+# Main of the application
+if __name__ == '__main__':
+	# Global variables
+	global raspID, lectureFrequency,sensorsFrequency, sensorsFrequency
+	global neighborsData, senseHatData, sense
+	# Wearable configuration variables **********************
+	configuration = []
+	with open("/home/root/configuration.conf", "r") as text:
+	    for line in text:
+	        value = line.split(":")[1].replace("\n","")
+	        configuration.append(value)
 
-# Declaring all the threads
-lock = threading.Lock()
-thread0 = threading.Thread(target = ShowTime, name = " 0", args=(lock,))
-thread1 = threading.Thread(target = SetOutput, name = " 1", args=(lock,))
-thread2 = threading.Thread(target = SetSensorData, name = " 2", args=(lock,))
-thread3 = threading.Thread(target = SetNeighbors, name = " 3", args=(lock,))
-thread4 = threading.Thread(target = SetAudioData, name = " 4", args=(lock,))
+	raspID = int(configuration[0])
+	lectureFrequency = int(configuration[1])
+	sensorsFrequency = int(configuration[2])
+	isRpiActive = configuration[3]
+	#********************************************************
 
-# Starting all the threads
-thread0.start()
-thread1.start()
-thread2.start()
-thread3.start()
-thread4.start()
+	# Global variables for information
+	neighborsData = '"Neighbors" : []'
+	senseHatData = '"Time" : [], "Accelerometer" : [], "Magnetometer" : [], "Gyroscope" : []'
 
-# Joining all the threads
-thread0.join()
-thread1.join()
-thread2.join()
-thread3.join()
-thread4.join()
+	# Sense hat initialization
+	sense = SenseHat();
+	sense.set_imu_config(True, True, True)
+
+	# Declaring all the threads
+	lock = threading.Lock()
+	thread0 = threading.Thread(target = ShowTime, name = " 0", args=(lock,))
+	thread1 = threading.Thread(target = SetSensorData, name = " 1", args=(lock,))
+	thread2 = threading.Thread(target = SetNeighbors, name = " 2", args=(lock,))
+	thread3 = threading.Thread(target = SetAudioData, name = " 3", args=(lock,))
+
+	# Starting all the threads
+	thread0.start()
+	thread1.start()
+	thread2.start()
+	thread3.start()
+
+	# Joining all the threads
+	thread0.join()
+	thread1.join()
+	thread2.join()
+	thread3.join()

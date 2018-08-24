@@ -3,32 +3,19 @@ import sys
 import bluetooth._bluetooth as bluez
 import time
 import math
+import subprocess
 
-def CalculateBeaconDistance(txPower, rssi):
-    ratio_db = float(txPower - rssi)
-    ratio_linear = float(math.pow(10, float(ratio_db/10)))
-    distance = float(math.sqrt(ratio_linear))
-    return distance
-
-
+print("Starting beacon scanner")
 dev_id = 0
-try:
-    sock = bluez.hci_open_dev(dev_id)
-    print("Starting beacon scanner")
-except:
-    print("Error: no access to bluetooth device")
-    sys.exit(1)
-
-blescan.SetScanParameters(sock)
+sock = bluez.hci_open_dev(dev_id)
 blescan.EnableScan(sock)
 
-seconds = 0
 while True:
-    print("------------ Time = " + str(seconds) + " ---------")
-    beaconList = blescan.GetNearBeacons(sock, 70)
+    localTime = str(subprocess.Popen("date", stdout=subprocess.PIPE, shell=True).communicate()[0].replace("\n","").split(" ")[3])
+    print("------------ Time = " + str(localTime) + " ---------")
+    beaconList = blescan.GetNearBeacons(sock, 25)
     for beacon in beaconList:
         minor = beacon.minor
         rssiValue = int(beacon.rssi)
-        print("Id : " + str(minor) + ", RSSI : " + str(rssiValue) + ", Aproximate distance = " + str(CalculateBeaconDistance(-55, rssiValue)) + "m")
-    seconds += 1
+        print("Id : " + str(minor) + ", RSSI : " + str(rssiValue))
 
