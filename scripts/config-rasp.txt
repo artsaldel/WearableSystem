@@ -56,4 +56,17 @@ Execute next command to initiate script at booting:
 	rm /etc/init.d/start-wearable.sh
 	update-rc.d start-wearable.sh remove
 
+Enabling audio:
+
+	cd /boot/
+	mkdir rpi
+	mount /dev/mmcblk0p1 /boot/rpi
+	cd rpi
+	vi config.txt
+
+	# Uncomment next line as
+	dtparam=audio=on
+
+
+
 
