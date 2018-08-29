@@ -1,1 +1,1 @@
-scp output_node2.json arturo@172.20.10.2:/home/arturo/Escritorio/WearableSystem/outputs
+scp output_node0.json arturo@192.168.0.110:/home/arturo/Escritorio/

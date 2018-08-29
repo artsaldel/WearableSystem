@@ -26,7 +26,7 @@ def SetSensorData(lock):
 	jsonData = open(outputName,"w+")
 	outputData = ""
 	localTime = 0
-	while(True and localTime < 10):
+	while(True):
 		dataTime = []
 		dataAccelerometer = []
 		dataMagnetometer = []
@@ -38,17 +38,11 @@ def SetSensorData(lock):
 					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 				except:
 					pass
-			#inicio = str(datetime.now()).replace(".",":")[:-3]
 			dataTime.append(str(datetime.now()).replace(".",":")[:-3])
 			dataGyroscope.append(sense.get_gyroscope_raw())
 			dataMagnetometer.append(sense.get_compass_raw())
 			dataAccelerometer.append(sense.get_accelerometer_raw())
 			senseHatData = '"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]\n' % (str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
-			#senseHatData = '"Time":[%s], "Accelerometer" : [%s], "Magnetometer" : [%s], "Gyroscope" : [%s]' % (str(dataTime), str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
-			#final = str(datetime.now()).replace(".",":")[:-3]
-			#print(inicio)
-			#print(final)
-			#print("")
 		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"Application data" : {\n%s,\n%s}\n},\n' % (str(dataTime[0]), raspID, str(neighborsData), str(senseHatData))
 		localTime += 1
 		if (localTime == 5):
