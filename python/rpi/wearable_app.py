@@ -3,6 +3,7 @@ import time
 import math
 import blescan
 import threading
+import subprocess
 from datetime import datetime
 from sense_hat import SenseHat
 
@@ -12,7 +13,7 @@ global neighborsData, senseHatData, sense
 
 
 # Updating configuration variables from the API
-def ShowTime(lock):
+def ShowId(lock):
 	while(True):
 		localTime = str(datetime.now()).replace(".",":")[:-3]
 		#print(localTime)
@@ -25,7 +26,7 @@ def SetSensorData(lock):
 	outputName = "/home/root/output_node" + str(raspID) + ".json"
 	jsonData = open(outputName,"w+")
 	outputData = ""
-	localTime = 0
+	localCtdr = 0
 	while(True):
 		dataTime = []
 		dataAccelerometer = []
@@ -38,16 +39,21 @@ def SetSensorData(lock):
 					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 				except:
 					pass
-			dataTime.append(str(datetime.now()).replace(".",":")[:-3])
+			localTime = str(datetime.now()).replace(".",":")[:-3]
+			if(ctdr == 1):
+				command = "arecord -d" + str(lectureFrequency) + " ~/audio/" + str(localTime).replace(" ", "_") + ".wav"
+				subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+				print(command)
+			dataTime.append(localTime)
 			dataGyroscope.append(sense.get_gyroscope_raw())
 			dataMagnetometer.append(sense.get_compass_raw())
 			dataAccelerometer.append(sense.get_accelerometer_raw())
 			senseHatData = '"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]\n' % (str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
 		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"Application data" : {\n%s,\n%s}\n},\n' % (str(dataTime[0]), raspID, str(neighborsData), str(senseHatData))
-		localTime += 1
-		if (localTime == 5):
+		localCtdr += 1
+		if (localCtdr == 5):
 			jsonData.write(outputData)
-			localTime = 0
+			localCtdr = 0
 			outputData = ""
 
 		
@@ -57,15 +63,6 @@ def SetNeighbors(lock):
 	while(True):
 		neighbors = blescan.GetNearBeacons(lectureFrequency)
 		neighborsData = '"Neighbors" : [%s]' % (str(neighbors))
-
-# Get audio file using Alsa
-def SetAudioData(lock):
-	global lectureFrequency
-	while(True):
-		# Execute audio command
-		with lock:
-			audio = True
-		time.sleep(float(1.0/lectureFrequency))
 
 # Main of the application
 if __name__ == '__main__':
@@ -95,19 +92,16 @@ if __name__ == '__main__':
 
 	# Declaring all the threads
 	lock = threading.Lock()
-	thread0 = threading.Thread(target = ShowTime, name = " 0", args=(lock,))
+	thread0 = threading.Thread(target = ShowId, name = " 0", args=(lock,))
 	thread1 = threading.Thread(target = SetSensorData, name = " 1", args=(lock,))
 	thread2 = threading.Thread(target = SetNeighbors, name = " 2", args=(lock,))
-	thread3 = threading.Thread(target = SetAudioData, name = " 3", args=(lock,))
 
 	# Starting all the threads
 	thread0.start()
 	thread1.start()
 	thread2.start()
-	thread3.start()
 
 	# Joining all the threads
 	thread0.join()
 	thread1.join()
 	thread2.join()
-	thread3.join()
