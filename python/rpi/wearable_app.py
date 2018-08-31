@@ -27,6 +27,9 @@ def SetSensorData(lock):
 	jsonData = open(outputName,"w+")
 	outputData = ""
 	localCtdr = 0
+	folderAudioName = "/home/root/audio_node" + str(raspID) + "/" +str(datetime.now()).replace(" ","_")[:-7].replace(":","-")
+	subprocess.Popen('mkdir %s' % ("/home/root/audio_node" + str(raspID)), stdout=subprocess.PIPE, shell=True)
+	subprocess.Popen('mkdir %s' % (folderAudioName), stdout=subprocess.PIPE, shell=True)
 	while(True):
 		dataTime = []
 		dataAccelerometer = []
@@ -41,7 +44,8 @@ def SetSensorData(lock):
 					pass
 			localTime = str(datetime.now()).replace(".",":")[:-3]
 			if(ctdr == 1):
-				command = "arecord -d" + str(lectureFrequency) + " ~/audio/" + str(localTime).replace(" ", "_") + ".wav"
+				#arecord -D plughw:1,0 -d 5 -f S16_LE -c1 -r16000 --disable-softvol ~/audio/test.wav
+				command = 'arecord -D plughw:1,0 -f S16_LE -c1 -r16000 --disable-softvol -d %s %s/%s.wav' % (str(lectureFrequency), folderAudioName, str(localTime).replace(" ", "_").replace(":","-"))
 				subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 				print(command)
 			dataTime.append(localTime)
@@ -76,10 +80,18 @@ if __name__ == '__main__':
 	        value = line.split(":")[1].replace("\n","")
 	        configuration.append(value)
 
+	# Initiating global configuration variables
 	raspID = int(configuration[0])
 	lectureFrequency = int(configuration[1])
 	sensorsFrequency = int(configuration[2])
 	isRpiActive = configuration[3]
+
+	# Running command for enabling audio
+	try:
+		subprocess.Popen('amixer -c1 sset "Mic" 100%+', stdout=subprocess.PIPE, shell=True)
+	except:
+		print("No microphone available")
+
 	#********************************************************
 
 	# Global variables for information

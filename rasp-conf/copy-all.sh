@@ -1,4 +1,4 @@
-route=/media/arturo/c5ab9b60-a104-4a8b-b6f2-9cdc6f75f780
+route=/media/arturo/rpi
 cp 99-i2c.rules $route/etc/udev/rules.d
 cp config.txt $route/boot
 cp inittab $route/etc
