@@ -10,7 +10,7 @@ from sense_hat import SenseHat
 # Global variables
 global raspID, lectureFrequency, sensorsFrequency
 global neighborsData, senseHatData, sense
-global folderAudioName, jsonFile, soundCardNumber
+global folderAudioName, jsonFile
 
 # Initiate the outpit file in order to start witing information into it
 def PrepareOutput():
@@ -22,13 +22,15 @@ def PrepareOutput():
 def PrepareAudio():
 	global folderAudioName
 	folderAudioName = '/home/root/audio_node%s/%s' % (str(raspID), str(datetime.now()).replace(" ","_")[:-7].replace(":","-"))
-	subprocess.Popen('mkdir %s' % ("/home/root/audio_node" + str(raspID)), stdout=subprocess.PIPE, shell=True)
-	subprocess.Popen('mkdir %s' % (folderAudioName), stdout=subprocess.PIPE, shell=True)
+	subprocess.call('mkdir %s' % ("/home/root/audio_node" + str(raspID)), shell=True)
+	subprocess.call('mkdir %s' % (folderAudioName), shell=True)
+	subprocess.call("clear", shell=True)
 
 def RecordAudio(localTime):
-	global lectureFrequency, folderAudioName, soundCardNumber
+	global lectureFrequency, folderAudioName
 	fileName = str(localTime).replace(" ", "_").replace(":","-")
 	command = 'arecord -f S16_LE -c1 -r16000 -d %s %s/%s.wav' % (str(lectureFrequency), folderAudioName, fileName)
+	#subprocess.call(command, shell=True)
 	subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 
 def GetTimeDrift():
@@ -105,11 +107,33 @@ def ShowId(lock):
 	while(True):
 		sense.show_message(str(raspID))
 
+def EnableAudio():
+	# Running command for enabling audio
+	try:
+		command = 'amixer -c0 sset "Mic" 100%+'
+		subprocess.call(command, shell=True)
+		subprocess.call("clear", shell=True)
+	except:
+		print("No microphone available")
+
+def EnableBeacon():
+	global raspID
+	try:
+		subprocess.call("hciattach /dev/ttyAMA0 bcm43xx 115200 noflow -", shell=True)
+		subprocess.call("hciconfig hci0 up", shell=True)
+		subprocess.call("hciconfig hci0 leadv 3", shell=True)
+		subprocess.call("hciconfig hci0 noscan", shell=True)
+		hexID = str(hex(raspID).split('x')[-1]).upper().zfill(4)
+		commandBeacon = 'hcitool -i hci0 cmd 0x08 0x0008 1E 02 01 1A 1A FF 4C 00 02 15 63 6F 3F 8F 64 91 4B EE 95 F7 D8 CC 64 A8 63 B5 00 00 %s %s C8' % (hexID[:2], hexID[2:])
+		subprocess.call(commandBeacon, shell=True)
+	except:
+		print("No BLE device")
+
 # Main of the application
 if __name__ == '__main__':
 	# Global variables
 	global raspID, lectureFrequency,sensorsFrequency, sensorsFrequency
-	global neighborsData, senseHatData, sense, soundCardNumber
+	global neighborsData, senseHatData, sense
 
 	# Wearable configuration variables **********************
 	configuration = []
@@ -122,14 +146,10 @@ if __name__ == '__main__':
 	raspID = int(configuration[0])
 	lectureFrequency = int(configuration[1])
 	sensorsFrequency = int(configuration[2])
-	soundCardNumber = int(configuration[3])
-	# Running command for enabling audio
-	try:
-		command = "amixer -c" + str(soundCardNumber) + ' sset "Mic" 100%+'
-		subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-	except:
-		print("No microphone available")
-	#********************************************************
+
+	#Running commands for enabling audio and beacon transmission
+	EnableAudio()
+	EnableBeacon()
 
 	# Global variables for information
 	neighborsData = '"Neighbors" : []'

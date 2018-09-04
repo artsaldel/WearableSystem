@@ -65,7 +65,7 @@ Enabling audio:
 	vi config.txt
 
 	# Uncomment next line as
-	dtparam=audio=on
+	dtparam=audio=off
 
 
 
