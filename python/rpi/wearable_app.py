@@ -12,15 +12,13 @@ global raspID, lectureFrequency, sensorsFrequency
 global neighborsData, senseHatData, sense
 global folderAudioName, jsonFile
 
-# Initiate the outpit file in order to start witing information into it
-def PrepareOutput():
-	global raspID, jsonFile
+# Creates a new folder for saving audio ouput files
+def PrepareOutputs():
+	global raspID, jsonFile, folderAudioName
+	# Opening JSON file
 	outputName = '/home/root/output_node%s.json' % (str(raspID))
 	jsonFile = open(outputName,"w+")
-
-# Creates a new folder for saving audio ouput files
-def PrepareAudio():
-	global folderAudioName
+	# Creates new folder for audio
 	folderAudioName = '/home/root/audio_node%s/%s' % (str(raspID), str(datetime.now()).replace(" ","_")[:-7].replace(":","-"))
 	subprocess.call('mkdir %s' % ("/home/root/audio_node" + str(raspID)), shell=True)
 	subprocess.call('mkdir %s' % (folderAudioName), shell=True)
@@ -30,7 +28,6 @@ def RecordAudio(localTime):
 	global lectureFrequency, folderAudioName
 	fileName = str(localTime).replace(" ", "_").replace(":","-")
 	command = 'arecord -f S16_LE -c1 -r16000 -d %s %s/%s.wav' % (str(lectureFrequency), folderAudioName, fileName)
-	#subprocess.call(command, shell=True)
 	subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 
 def GetTimeDrift():
@@ -46,10 +43,9 @@ def SetSensorData(lock):
 	global lectureFrequency, sensorsFrequency, neighborsData
 	global senseHatData, localRead, folderAudioName, jsonFile
 	# Preparing audio and json files
-	PrepareOutput()
-	PrepareAudio()
+	PrepareOutputs()
 	# Local variables
-	outputData = ""
+	outputData = "["
 	localCtdr = 0
 	globalCtdr = 0
 	#Start adquiring information
@@ -84,14 +80,16 @@ def SetSensorData(lock):
 		timeDrift = GetTimeDrift()
 
 		# Save the information as JSON format
-		senseHatData = '"Read time": [%s],\n"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]\n' % (str(dataTime), str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
-		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"NTP time drift" : "%s",\n"Application data" : {\n%s,\n%s}\n},\n' % (str(dataTime[0]), raspID, timeDrift, str(neighborsData), str(senseHatData))
-		
+		senseHatData = '"Read time": [%s],\n"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]' % (str(dataTime), str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
+		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"NTP time drift" : "%s",\n"Application data" : {\n%s,\n%s}\n},\n\n\n' % (str(dataTime[0]), raspID, timeDrift, str(neighborsData), str(senseHatData))
+
 		# Write the information into the JSON file every 5 seconds
 		localCtdr += 1
 		globalCtdr += 1
 		if (localCtdr == 5):
+			jsonFile = open('/home/root/output_node%s.json' % (str(raspID)),"a")
 			jsonFile.write(outputData)
+			jsonFile.close()
 			localCtdr = 0
 			outputData = ""
 
