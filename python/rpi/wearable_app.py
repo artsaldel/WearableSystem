@@ -8,59 +8,89 @@ from datetime import datetime
 from sense_hat import SenseHat
 
 # Global variables
-global raspID, lectureFrequency,sensorsFrequency, sensorsFrequency
+global raspID, lectureFrequency, sensorsFrequency
 global neighborsData, senseHatData, sense
+global folderAudioName, jsonFile, soundCardNumber
 
+# Initiate the outpit file in order to start witing information into it
+def PrepareOutput():
+	global raspID, jsonFile
+	outputName = '/home/root/output_node%s.json' % (str(raspID))
+	jsonFile = open(outputName,"w+")
 
-# Updating configuration variables from the API
-def ShowId(lock):
-	while(True):
-		localTime = str(datetime.now()).replace(".",":")[:-3]
-		#print(localTime)
-		sense.show_message(str(raspID))
-		#time.sleep(1)
+# Creates a new folder for saving audio ouput files
+def PrepareAudio():
+	global folderAudioName
+	folderAudioName = '/home/root/audio_node%s/%s' % (str(raspID), str(datetime.now()).replace(" ","_")[:-7].replace(":","-"))
+	subprocess.Popen('mkdir %s' % ("/home/root/audio_node" + str(raspID)), stdout=subprocess.PIPE, shell=True)
+	subprocess.Popen('mkdir %s' % (folderAudioName), stdout=subprocess.PIPE, shell=True)
+
+def RecordAudio(localTime):
+	global lectureFrequency, folderAudioName
+	fileName = str(localTime).replace(" ", "_").replace(":","-")
+	command = 'arecord -D plughw:0,0 -f S16_LE -c1 -r16000 --disable-softvol -d %s %s/%s.wav' % (str(lectureFrequency), folderAudioName, fileName)
+	subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+
+def GetTimeDrift():
+	drift = ""
+	with open("/var/lib/ntp/ntp.drift", "r") as text:
+	    for line in text:
+	        drift = line.replace("\n","")
+	driftPerSecond = '%s ppm' % (str(drift))
+	return driftPerSecond
 
 # Get sensors information using sense hat
 def SetSensorData(lock):
-	global lectureFrequency, sensorsFrequency, neighborsData, senseHatData, localRead, isRpiActive
-	outputName = "/home/root/output_node" + str(raspID) + ".json"
-	jsonData = open(outputName,"w+")
+	global lectureFrequency, sensorsFrequency, neighborsData
+	global senseHatData, localRead, folderAudioName, jsonFile
+	# Preparing audio and json files
+	PrepareOutput()
+	PrepareAudio()
+	# Local variables
 	outputData = ""
 	localCtdr = 0
-	folderAudioName = "/home/root/audio_node" + str(raspID) + "/" +str(datetime.now()).replace(" ","_")[:-7].replace(":","-")
-	subprocess.Popen('mkdir %s' % ("/home/root/audio_node" + str(raspID)), stdout=subprocess.PIPE, shell=True)
-	subprocess.Popen('mkdir %s' % (folderAudioName), stdout=subprocess.PIPE, shell=True)
+	#Start adquiring information
 	while(True):
 		dataTime = []
 		dataAccelerometer = []
 		dataMagnetometer = []
 		dataGyroscope = []
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
+
+		# Catching audio and sensors data
 		for ctdr in range (1, sensorsFrequency + 1):
+			#Wait til a second pass
 			while( not( int((ctdr - 1)*(1000.0/sensorsFrequency)) <= localMiliseconds < int(ctdr*(1000.0/sensorsFrequency)) ) ):
 				try:
 					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 				except:
 					pass
+
+			# Reading time
 			localTime = str(datetime.now()).replace(".",":")[:-3]
 			if(ctdr == 1):
-				#arecord -D plughw:1,0 -d 5 -f S16_LE -c1 -r16000 --disable-softvol ~/audio/test.wav
-				command = 'arecord -D plughw:1,0 -f S16_LE -c1 -r16000 --disable-softvol -d %s %s/%s.wav' % (str(lectureFrequency), folderAudioName, str(localTime).replace(" ", "_").replace(":","-"))
-				subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-				print(command)
+				RecordAudio(localTime)
+
+			# Collecting data from the sensors
 			dataTime.append(localTime)
 			dataGyroscope.append(sense.get_gyroscope_raw())
 			dataMagnetometer.append(sense.get_compass_raw())
 			dataAccelerometer.append(sense.get_accelerometer_raw())
-			senseHatData = '"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]\n' % (str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
-		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"Application data" : {\n%s,\n%s}\n},\n' % (str(dataTime[0]), raspID, str(neighborsData), str(senseHatData))
+
+		# Time drift against NTP server
+		timeDrift = GetTimeDrift()
+
+		# Save the information as JSON format
+		senseHatData = '"Read time": [%s],\n"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]\n' % (str(dataTime), str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
+		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"NTP time drift" : "%s",\n"Application data" : {\n%s,\n%s}\n},\n' % (str(dataTime[0]), raspID, timeDrift, str(neighborsData), str(senseHatData))
+		
+		# Write the information into the JSON file every 5 seconds
 		localCtdr += 1
 		if (localCtdr == 5):
-			jsonData.write(outputData)
+			jsonFile.write(outputData)
 			localCtdr = 0
 			outputData = ""
 
-		
 # Get neighbors using BLE scanner
 def SetNeighbors(lock):
 	global neighborsData, lectureFrequency
@@ -68,11 +98,17 @@ def SetNeighbors(lock):
 		neighbors = blescan.GetNearBeacons(lectureFrequency)
 		neighborsData = '"Neighbors" : [%s]' % (str(neighbors))
 
+# Updating configuration variables from the API
+def ShowId(lock):
+	while(True):
+		sense.show_message(str(raspID))
+
 # Main of the application
 if __name__ == '__main__':
 	# Global variables
 	global raspID, lectureFrequency,sensorsFrequency, sensorsFrequency
-	global neighborsData, senseHatData, sense
+	global neighborsData, senseHatData, sense, soundCardNumber
+
 	# Wearable configuration variables **********************
 	configuration = []
 	with open("/home/root/configuration.conf", "r") as text:
@@ -84,14 +120,13 @@ if __name__ == '__main__':
 	raspID = int(configuration[0])
 	lectureFrequency = int(configuration[1])
 	sensorsFrequency = int(configuration[2])
-	isRpiActive = configuration[3]
-
+	soundCardNumber = int(configuration[3])
 	# Running command for enabling audio
 	try:
-		subprocess.Popen('amixer -c1 sset "Mic" 100%+', stdout=subprocess.PIPE, shell=True)
+		command = "amixer -c" + str(soundCardNumber) + ' sset "Mic" 100%+'
+		subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 	except:
 		print("No microphone available")
-
 	#********************************************************
 
 	# Global variables for information
