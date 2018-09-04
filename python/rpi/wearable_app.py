@@ -26,9 +26,9 @@ def PrepareAudio():
 	subprocess.Popen('mkdir %s' % (folderAudioName), stdout=subprocess.PIPE, shell=True)
 
 def RecordAudio(localTime):
-	global lectureFrequency, folderAudioName
+	global lectureFrequency, folderAudioName, soundCardNumber
 	fileName = str(localTime).replace(" ", "_").replace(":","-")
-	command = 'arecord -D plughw:0,0 -f S16_LE -c1 -r16000 --disable-softvol -d %s %s/%s.wav' % (str(lectureFrequency), folderAudioName, fileName)
+	command = 'arecord -f S16_LE -c1 -r16000 -d %s %s/%s.wav' % (str(lectureFrequency), folderAudioName, fileName)
 	subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 
 def GetTimeDrift():
@@ -49,6 +49,7 @@ def SetSensorData(lock):
 	# Local variables
 	outputData = ""
 	localCtdr = 0
+	globalCtdr = 0
 	#Start adquiring information
 	while(True):
 		dataTime = []
@@ -86,6 +87,7 @@ def SetSensorData(lock):
 		
 		# Write the information into the JSON file every 5 seconds
 		localCtdr += 1
+		globalCtdr += 1
 		if (localCtdr == 5):
 			jsonFile.write(outputData)
 			localCtdr = 0
