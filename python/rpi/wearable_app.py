@@ -10,23 +10,20 @@ from sense_hat import SenseHat
 # Global variables
 global raspID, lectureFrequency, sensorsFrequency
 global neighborsData, senseHatData, sense
-global folderAudioName, folderJsonName, jsonFile
+global folderAudioName, jsonFile
 
 # Creates a new folder for saving audio ouput files
 def PrepareOutputs():
-	global raspID, jsonFile, folderAudioName, folderJsonName
-	# Cleaning old outputs
-	subprocess.call('rm -rf /home/root/outputs_node%s' % (str(raspID)), shell=True)
-	subprocess.call('mkdir /home/root/outputs_node%s' % (str(raspID)), shell=True)
-	subprocess.call('mkdir /home/root/outputs_node%s/audio_node%s' % (str(raspID), str(raspID)), shell=True)
-	# Creates new folder for audio and JSON
-	folderAudioName = '/home/root/outputs_node%s/audio_node%s' % (str(raspID), str(raspID))
-	folderJsonName = '/home/root/outputs_node%s' % (str(raspID))
+	global raspID, jsonFile, folderAudioName
 	# Opening JSON file
-	outputName = '/home/root/outputs_node%s/json_node%s.json' % (str(raspID), str(raspID))
+	outputName = '/home/root/output_node%s.json' % (str(raspID))
 	jsonFile = open(outputName,"w+")
+	# Creates new folder for audio
+	folderAudioName = '/home/root/audio_node%s/%s' % (str(raspID), str(datetime.now()).replace(" ","_")[:-7].replace(":","-"))
+	subprocess.call('mkdir %s' % ("/home/root/audio_node" + str(raspID)), shell=True)
+	subprocess.call('mkdir %s' % (folderAudioName), shell=True)
+	subprocess.call("clear", shell=True)
 
-	
 def RecordAudio(localTime):
 	global lectureFrequency, folderAudioName
 	fileName = str(localTime).replace(" ", "_").replace(":","-")
@@ -43,8 +40,8 @@ def GetTimeDrift():
 
 # Get sensors information using sense hat
 def SetSensorData(lock):
-	global sensorsFrequency, neighborsData
-	global senseHatData, folderJsonName, jsonFile
+	global lectureFrequency, sensorsFrequency, neighborsData
+	global senseHatData, localRead, folderAudioName, jsonFile
 	# Preparing audio and json files
 	PrepareOutputs()
 	# Local variables
@@ -90,7 +87,7 @@ def SetSensorData(lock):
 		localCtdr += 1
 		globalCtdr += 1
 		if (localCtdr == 5):
-			jsonFile = open('%s/json_node%s.json' % (folderJsonName ,str(raspID)),"a")
+			jsonFile = open('/home/root/output_node%s.json' % (str(raspID)),"a")
 			jsonFile.write(outputData)
 			jsonFile.close()
 			localCtdr = 0
@@ -133,7 +130,7 @@ def EnableBeacon():
 # Main of the application
 if __name__ == '__main__':
 	# Global variables
-	global raspID, lectureFrequency,sensorsFrequency
+	global raspID, lectureFrequency,sensorsFrequency, sensorsFrequency
 	global neighborsData, senseHatData, sense
 
 	# Wearable configuration variables **********************

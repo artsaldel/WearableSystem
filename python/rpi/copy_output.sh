@@ -1,0 +1,1 @@
+scp output_node0.json arturo@192.168.0.110:/home/arturo/Escritorio/
