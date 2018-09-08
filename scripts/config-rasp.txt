@@ -67,6 +67,10 @@ Enabling audio:
 	# Uncomment next line as
 	dtparam=audio=off
 
+### Changing configuration of the sense hat
+cd /home/root/.config/sense_hat
+vi RTIMULib.ini
+# go to LSM9DS1 settings and change as needed
 
 
 

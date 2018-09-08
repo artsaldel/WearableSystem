@@ -1,6 +1,4 @@
-import os
-import time
-import math
+import sensors
 import blescan
 import threading
 import subprocess
@@ -75,15 +73,15 @@ def SetSensorData(lock):
 
 			# Collecting data from the sensors
 			dataTime.append(localTime)
-			dataGyroscope.append(sense.get_gyroscope_raw())
-			dataMagnetometer.append(sense.get_compass_raw())
-			dataAccelerometer.append(sense.get_accelerometer_raw())
+			dataGyroscope.append(sensors.readGyro())
+			dataAccelerometer.append(sensors.readAccel())
+			dataMagnetometer.append(sensors.readMagn())
 
 		# Time drift against NTP server
 		timeDrift = GetTimeDrift()
 
 		# Save the information as JSON format
-		senseHatData = '"Read time": [%s],\n"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]' % (str(dataTime), str(dataAccelerometer), str(dataMagnetometer), str(dataGyroscope))
+		senseHatData = '"Read time": [%s],\n"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]' % (str(dataTime).replace("'",'"'), str(dataAccelerometer).replace("'",""), str(dataMagnetometer).replace("'",""), str(dataGyroscope).replace("'",""))
 		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"NTP time drift" : "%s",\n"Application data" : {\n%s,\n%s}\n},\n\n\n' % (str(dataTime[0]), raspID, timeDrift, str(neighborsData), str(senseHatData))
 
 		# Write the information into the JSON file every 5 seconds
