@@ -1,7 +1,7 @@
 import sensors
 import blescan
-import threading
 import subprocess
+import multiprocessing
 from datetime import datetime
 from sense_hat import SenseHat
 
@@ -12,7 +12,7 @@ global folderAudioName, folderJsonName, jsonFile
 
 # Creates a new folder for saving audio ouput files
 def PrepareOutputs():
-	global raspID, jsonFile, folderAudioName, folderJsonName
+	global raspID, jsonFile, folderAudioName, folderJsonName, neighborsData, senseHatData, sense
 	# Cleaning old outputs
 	subprocess.call('rm -rf /home/root/outputs_node%s' % (str(raspID)), shell=True)
 	subprocess.call('mkdir /home/root/outputs_node%s' % (str(raspID)), shell=True)
@@ -23,6 +23,14 @@ def PrepareOutputs():
 	# Opening JSON file
 	outputName = '/home/root/outputs_node%s/json_node%s.json' % (str(raspID), str(raspID))
 	jsonFile = open(outputName,"w+")
+
+	# Global variables for information
+	neighborsData = '"Neighbors" : []'
+	senseHatData = '"Time" : [], "Accelerometer" : [], "Magnetometer" : [], "Gyroscope" : []'
+
+	# Sense hat initialization
+	sense = SenseHat();
+	sense.set_imu_config(True, True, True)
 
 	
 def RecordAudio(localTime):
@@ -40,11 +48,10 @@ def GetTimeDrift():
 	return driftPerSecond
 
 # Get sensors information using sense hat
-def SetSensorData(lock):
+def SetSensorData():
 	global sensorsSampleRate, neighborsData
 	global senseHatData, folderJsonName, jsonFile
-	# Preparing audio and json files
-	PrepareOutputs()
+	
 	# Local variables
 	outputData = "["
 	localCtdr = 0
@@ -67,10 +74,9 @@ def SetSensorData(lock):
 				except:
 					pass
 
-			# Recording audio
+			# Time for saving lecture
 			if(ctdr == 1):
 				firstTime = str(datetime.now()).replace(".",":")[:-3]
-				RecordAudio(firstTime)
 
 			# Collecting data from the sensors
 			dataGyroscope.append(sensors.readGyro())
@@ -94,15 +100,34 @@ def SetSensorData(lock):
 			localCtdr = 0
 			outputData = ""
 
+# Create a new 1 second audio file
+def SetAudio():
+	while(True):
+		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
+		# Catching audio and sensors data
+		for ctdr in range (1, sensorsSampleRate + 1):
+			#Wait til a second pass
+			while( not( int((ctdr - 1)*(1000.0/sensorsSampleRate)) <= localMiliseconds < int(ctdr*(1000.0/sensorsSampleRate)) ) ):
+				try:
+					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
+				except:
+					pass
+
+			# Recording audio
+			if(ctdr == 1):
+				firstTime = str(datetime.now()).replace(".",":")[:-3]
+				RecordAudio(firstTime)
+
+
 # Get neighbors using BLE scanner
-def SetNeighbors(lock):
+def SetNeighbors():
 	global neighborsData, lectureFrequency
 	while(True):
 		neighbors = blescan.GetNearBeacons(lectureFrequency)
 		neighborsData = '"Neighbors" : [%s]' % (str(neighbors))
 
 # Updating configuration variables from the API
-def ShowId(lock):
+def ShowId():
 	while(True):
 		sense.show_message(str(raspID))
 
@@ -146,8 +171,6 @@ def SetConfigurationProperties():
 
 # Main of the application
 if __name__ == '__main__':
-	# Global variables
-	global neighborsData, senseHatData, sense
 
 	# Wearable configuration variables 
 	SetConfigurationProperties()	
@@ -156,26 +179,20 @@ if __name__ == '__main__':
 	EnableAudio()
 	EnableBeacon()
 
-	# Global variables for information
-	neighborsData = '"Neighbors" : []'
-	senseHatData = '"Time" : [], "Accelerometer" : [], "Magnetometer" : [], "Gyroscope" : []'
+	# Preparing audio and json files
+	PrepareOutputs()		
 
-	# Sense hat initialization
-	sense = SenseHat();
-	sense.set_imu_config(True, True, True)
+	process1 = multiprocessing.Process(target=ShowId, name = " 1")
+	process2 = multiprocessing.Process(target=SetSensorData, name = " 2")
+	process3 = multiprocessing.Process(target=SetNeighbors, name = " 3")
+	process4 = multiprocessing.Process(target=SetAudio, name = " 3")
 
-	# Declaring all the threads
-	lock = threading.Lock()
-	thread0 = threading.Thread(target = ShowId, name = " 0", args=(lock,))
-	thread1 = threading.Thread(target = SetSensorData, name = " 1", args=(lock,))
-	thread2 = threading.Thread(target = SetNeighbors, name = " 2", args=(lock,))
+	process1.start()
+	process2.start()
+	process3.start()
+	process4.start()
 
-	# Starting all the threads
-	thread0.start()
-	thread1.start()
-	thread2.start()
-
-	# Joining all the threads
-	thread0.join()
-	thread1.join()
-	thread2.join()
+	process1.join()
+	process2.join()
+	process3.join()
+	process4.join()

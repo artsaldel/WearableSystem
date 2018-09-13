@@ -67,6 +67,8 @@ Enabling audio:
 	# Uncomment next line as
 	dtparam=audio=off
 
+	# Then reboot 
+
 ### Changing configuration of the sense hat
 cd /home/root/.config/sense_hat
 vi RTIMULib.ini
