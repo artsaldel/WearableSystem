@@ -6,7 +6,7 @@ from datetime import datetime
 from sense_hat import SenseHat
 
 # Global variables
-global raspID, lectureFrequency, sensorsFrequency
+global raspID, lectureFrequency, sensorsSampleRate
 global neighborsData, senseHatData, sense
 global folderAudioName, folderJsonName, jsonFile
 
@@ -41,7 +41,7 @@ def GetTimeDrift():
 
 # Get sensors information using sense hat
 def SetSensorData(lock):
-	global sensorsFrequency, neighborsData
+	global sensorsSampleRate, neighborsData
 	global senseHatData, folderJsonName, jsonFile
 	# Preparing audio and json files
 	PrepareOutputs()
@@ -56,23 +56,23 @@ def SetSensorData(lock):
 		dataMagnetometer = []
 		dataGyroscope = []
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
+		firstTime = str(datetime.now()).replace(".",":")[:-3]
 
 		# Catching audio and sensors data
-		for ctdr in range (1, sensorsFrequency + 1):
+		for ctdr in range (1, sensorsSampleRate + 1):
 			#Wait til a second pass
-			while( not( int((ctdr - 1)*(1000.0/sensorsFrequency)) <= localMiliseconds < int(ctdr*(1000.0/sensorsFrequency)) ) ):
+			while( not( int((ctdr - 1)*(1000.0/sensorsSampleRate)) <= localMiliseconds < int(ctdr*(1000.0/sensorsSampleRate)) ) ):
 				try:
 					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 				except:
 					pass
 
-			# Reading time
-			localTime = str(datetime.now()).replace(".",":")[:-3]
+			# Recording audio
 			if(ctdr == 1):
-				RecordAudio(localTime)
+				firstTime = str(datetime.now()).replace(".",":")[:-3]
+				RecordAudio(firstTime)
 
 			# Collecting data from the sensors
-			dataTime.append(localTime)
 			dataGyroscope.append(sensors.readGyro())
 			dataAccelerometer.append(sensors.readAccel())
 			dataMagnetometer.append(sensors.readMagn())
@@ -81,8 +81,8 @@ def SetSensorData(lock):
 		timeDrift = GetTimeDrift()
 
 		# Save the information as JSON format
-		senseHatData = '"Read time": [%s],\n"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]' % (str(dataTime).replace("'",'"'), str(dataAccelerometer).replace("'",""), str(dataMagnetometer).replace("'",""), str(dataGyroscope).replace("'",""))
-		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"NTP time drift" : "%s",\n"Application data" : {\n%s,\n%s}\n},\n\n\n' % (str(dataTime[0]), raspID, timeDrift, str(neighborsData), str(senseHatData))
+		senseHatData = '"Accelerometer" : [%s],\n"Magnetometer" : [%s],\n"Gyroscope" : [%s]' % (str(dataAccelerometer).replace("'",""), str(dataMagnetometer).replace("'",""), str(dataGyroscope).replace("'",""))
+		outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"NTP time drift" : "%s",\n"Application data" : {\n%s,\n%s}\n},\n\n\n' % (firstTime, raspID, timeDrift, str(neighborsData), str(senseHatData))
 
 		# Write the information into the JSON file every 5 seconds
 		localCtdr += 1
@@ -130,23 +130,27 @@ def EnableBeacon():
 	except:
 		print("No BLE device")
 
-# Main of the application
-if __name__ == '__main__':
-	# Global variables
-	global raspID, lectureFrequency,sensorsFrequency
-	global neighborsData, senseHatData, sense
-
-	# Wearable configuration variables **********************
+def SetConfigurationProperties():
+	global raspID, lectureFrequency,sensorsSampleRate
 	configuration = []
 	with open("/home/root/configuration.conf", "r") as text:
 	    for line in text:
-	        value = line.split(":")[1].replace("\n","")
-	        configuration.append(value)
+	    	if(line != "\n"):
+		        value = line.split(":")[1].replace("\n","")
+		        configuration.append(value)
 
 	# Initiating global configuration variables
 	raspID = int(configuration[0])
-	lectureFrequency = int(configuration[1])
-	sensorsFrequency = int(configuration[2])
+	sensorsSampleRate = int(configuration[1])
+	lectureFrequency = 1
+
+# Main of the application
+if __name__ == '__main__':
+	# Global variables
+	global neighborsData, senseHatData, sense
+
+	# Wearable configuration variables 
+	SetConfigurationProperties()	
 
 	#Running commands for enabling audio and beacon transmission
 	EnableAudio()
