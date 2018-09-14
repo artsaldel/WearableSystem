@@ -45,8 +45,6 @@ def SetAccelerometerData(dataAccelerometer):
 			if(ctdr == 1):
 				del dataAccelerometer[:]
 			dataAccelerometer.append(sensorCollector.ReadAccelerometer())
-		print("Accel - " + str(dataAccelerometer))
-		print("")
 
 # Setting data from gyroscope
 def SetGyroscopeData(dataGyroscope):
@@ -65,8 +63,6 @@ def SetGyroscopeData(dataGyroscope):
 			if(ctdr == 1):
 				del dataGyroscope[:]
 			dataGyroscope.append(sensorCollector.ReadGyroscope())
-		print("Gyro - " + str(dataGyroscope))
-		print("")
 
 # Setting data from magnetometer
 def SetMagnetometerData(dataMagnetometer):
@@ -85,8 +81,6 @@ def SetMagnetometerData(dataMagnetometer):
 			if(ctdr == 1):
 				del dataMagnetometer[:]
 			dataMagnetometer.append(sensorCollector.ReadMagnetometer())
-		print("Magn - " + str(dataMagnetometer))
-		print("")
 
 # Get sensors information using sense hat
 def SetSensorData(dataNeighbors, dataAccelerometer, dataGyroscope, dataMagnetometer):
