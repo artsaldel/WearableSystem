@@ -13,26 +13,7 @@ def setGyroAccelSampleRate():
 	bus.write_byte_data(ACCL_ADDR, CTRL_REG1_G, 0x2)
 
 
-def readGyro():
-    gyr_l = bus.read_byte_data(GYRO_ADDR, 0x18)
-    gyr_h = bus.read_byte_data(GYRO_ADDR, 0x19)
-    gyr_combined = (gyr_l | gyr_h << 8)
-    xValue = round((gyr_combined  if gyr_combined < 32768 else gyr_combined - 65536) * 1, 6)
-
-    gyr_l = bus.read_byte_data(GYRO_ADDR, 0x1a)
-    gyr_h = bus.read_byte_data(GYRO_ADDR, 0x1b)
-    gyr_combined = (gyr_l | gyr_h << 8)
-    yValue = round((gyr_combined  if gyr_combined < 32768 else gyr_combined - 65536) * 1, 6)
-
-    gyr_l = bus.read_byte_data(GYRO_ADDR, 0x1c)
-    gyr_h = bus.read_byte_data(GYRO_ADDR, 0x1d)
-    gyr_combined = (gyr_l | gyr_h << 8)
-    zValue = round((gyr_combined  if gyr_combined < 32768 else gyr_combined - 65536) * 1, 6)
-
-    return '{"x" : %s, "y" : %s, "z" : %s}' % (str(xValue), str(yValue), str(zValue))
-
-
-def readAccel():
+def ReadAccelerometer():
     acc_l = bus.read_byte_data(ACCL_ADDR, 0x28)
     acc_h = bus.read_byte_data(ACCL_ADDR, 0x29)
     acc_combined = (acc_l | acc_h << 8)
@@ -50,8 +31,25 @@ def readAccel():
 
     return '{"x" : %s, "y" : %s, "z" : %s}' % (str(xValue), str(yValue), str(zValue))
 
+def ReadGyroscope():
+    gyr_l = bus.read_byte_data(GYRO_ADDR, 0x18)
+    gyr_h = bus.read_byte_data(GYRO_ADDR, 0x19)
+    gyr_combined = (gyr_l | gyr_h << 8)
+    xValue = round((gyr_combined  if gyr_combined < 32768 else gyr_combined - 65536) * 1, 6)
 
-def readMagn():
+    gyr_l = bus.read_byte_data(GYRO_ADDR, 0x1a)
+    gyr_h = bus.read_byte_data(GYRO_ADDR, 0x1b)
+    gyr_combined = (gyr_l | gyr_h << 8)
+    yValue = round((gyr_combined  if gyr_combined < 32768 else gyr_combined - 65536) * 1, 6)
+
+    gyr_l = bus.read_byte_data(GYRO_ADDR, 0x1c)
+    gyr_h = bus.read_byte_data(GYRO_ADDR, 0x1d)
+    gyr_combined = (gyr_l | gyr_h << 8)
+    zValue = round((gyr_combined  if gyr_combined < 32768 else gyr_combined - 65536) * 1, 6)
+
+    return '{"x" : %s, "y" : %s, "z" : %s}' % (str(xValue), str(yValue), str(zValue))
+
+def ReadMagnetometer():
     gyr_l = bus.read_byte_data(MAGN_ADDR, 0x28)
     gyr_h = bus.read_byte_data(MAGN_ADDR, 0x29)
     gyr_combined = (gyr_l | gyr_h << 8)
