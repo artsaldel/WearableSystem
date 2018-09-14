@@ -261,10 +261,3 @@ if __name__ == '__main__':
 	PrepareOutputs()	
 	# Starting processes
 	StartProcesses()	
-
-	while(True):
-		print("Accel - " + sensors.ReadAccelerometer())
-		print("Magn - " + sensors.ReadMagnetometer())
-		print("Gyro - " + sensors.ReadGyroscope())
-		print("***************")
-		time.sleep(1)
