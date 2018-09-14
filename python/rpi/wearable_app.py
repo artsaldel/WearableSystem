@@ -1,8 +1,8 @@
-import sensors
+import time
 import blescan
 import subprocess
 import multiprocessing
-from ctypes import c_char_p
+from sensors import Sensors
 from datetime import datetime
 from sense_hat import SenseHat
 
@@ -31,6 +31,7 @@ def GetTimeDrift():
 # Setting data from accelerometer
 def SetAccelerometerData(dataAccelerometer):
 	global accelSampleRate
+	sensorCollector = Sensors()
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
@@ -43,11 +44,14 @@ def SetAccelerometerData(dataAccelerometer):
 					pass
 			if(ctdr == 1):
 				del dataAccelerometer[:]
-			dataAccelerometer.append(sensors.ReadAccelerometer())
+			dataAccelerometer.append(sensorCollector.ReadAccelerometer())
+		print("Accel - " + str(dataAccelerometer))
+		print("")
 
 # Setting data from gyroscope
 def SetGyroscopeData(dataGyroscope):
 	global gyroSampleRate
+	sensorCollector = Sensors()
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
@@ -60,11 +64,14 @@ def SetGyroscopeData(dataGyroscope):
 					pass
 			if(ctdr == 1):
 				del dataGyroscope[:]
-			dataGyroscope.append(sensors.ReadGyroscope())
+			dataGyroscope.append(sensorCollector.ReadGyroscope())
+		print("Gyro - " + str(dataGyroscope))
+		print("")
 
 # Setting data from magnetometer
 def SetMagnetometerData(dataMagnetometer):
 	global magnSampleRate
+	sensorCollector = Sensors()
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
@@ -77,7 +84,9 @@ def SetMagnetometerData(dataMagnetometer):
 					pass
 			if(ctdr == 1):
 				del dataMagnetometer[:]
-			dataMagnetometer.append(sensors.ReadMagnetometer())
+			dataMagnetometer.append(sensorCollector.ReadMagnetometer())
+		print("Magn - " + str(dataMagnetometer))
+		print("")
 
 # Get sensors information using sense hat
 def SetSensorData(dataNeighbors, dataAccelerometer, dataGyroscope, dataMagnetometer):
@@ -219,11 +228,11 @@ def StartProcesses():
 	# Enabling multiprocessing
 	process1 = multiprocessing.Process(target=ShowId)
 	process2 = multiprocessing.Process(target=SetAudio)
-	process3 = multiprocessing.Process(target=SetNeighbors, args = (dataNeighbors,))
-	process4 = multiprocessing.Process(target=SetAccelerometerData, args = (dataAccelerometer,))
-	process5 = multiprocessing.Process(target=SetGyroscopeData, args = (dataGyroscope,))
-	process6 = multiprocessing.Process(target=SetMagnetometerData, args = (dataMagnetometer,))
-	process7 = multiprocessing.Process(target=SetSensorData, args = (dataNeighbors, dataAccelerometer, dataGyroscope, dataMagnetometer,))
+	process3 = multiprocessing.Process(target=SetNeighbors, args = [dataNeighbors])
+	process4 = multiprocessing.Process(target=SetAccelerometerData, args = [dataAccelerometer])
+	process5 = multiprocessing.Process(target=SetGyroscopeData, args = [dataGyroscope])
+	process6 = multiprocessing.Process(target=SetMagnetometerData, args = [dataMagnetometer])
+	process7 = multiprocessing.Process(target=SetSensorData, args = [dataNeighbors, dataAccelerometer, dataGyroscope, dataMagnetometer])
 	# Starting all the processes
 	process1.start()
 	process2.start()
@@ -252,3 +261,10 @@ if __name__ == '__main__':
 	PrepareOutputs()	
 	# Starting processes
 	StartProcesses()	
+
+	while(True):
+		print("Accel - " + sensors.ReadAccelerometer())
+		print("Magn - " + sensors.ReadMagnetometer())
+		print("Gyro - " + sensors.ReadGyroscope())
+		print("***************")
+		time.sleep(1)
