@@ -7,7 +7,7 @@ from datetime import datetime
 from sense_hat import SenseHat
 
 # Global variables
-global raspID, sense
+global raspID
 global folderAudioName, folderJsonName, jsonFile
 global accelSampleRate, gyroSampleRate, magnSampleRate
 
@@ -31,13 +31,23 @@ def GetTimeDrift():
 # Setting data from accelerometer
 def SetAccelerometerData(dataAccelerometer):
 	global accelSampleRate
-	sensorCollector = Sensors()
+	sensorCollector = Sensors(accelSampleRate, magnSampleRate)
+
+	rate = 14.9
+	if(accelSampleRate == 1): rate = 14.9
+	elif(accelSampleRate == 2): rate = 59.5
+	elif(accelSampleRate == 3): rate = 119.0
+	elif(accelSampleRate == 4): rate = 238.0
+	elif(accelSampleRate == 5): rate = 476.0
+	elif(accelSampleRate == 6): rate = 952.0
+	else: rate = 119.0 # Default Value
+
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
-		for ctdr in range (1, accelSampleRate + 1):
+		for ctdr in range (1, int(rate + 1)):
 			# Collect information from accelerometer
-			while( not( int((ctdr - 1)*(1000.0/accelSampleRate)) <= localMiliseconds < int(ctdr*(1000.0/accelSampleRate)) ) ):
+			while( not( int((ctdr - 1)*(1000.0/rate)) <= localMiliseconds < int(ctdr*(1000.0/rate)) ) ):
 				try:
 					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 				except:
@@ -49,13 +59,23 @@ def SetAccelerometerData(dataAccelerometer):
 # Setting data from gyroscope
 def SetGyroscopeData(dataGyroscope):
 	global gyroSampleRate
-	sensorCollector = Sensors()
+	sensorCollector = Sensors(gyroSampleRate, magnSampleRate)
+
+	rate = 14.9
+	if(gyroSampleRate == 1): rate = 14.9
+	elif(gyroSampleRate == 2): rate = 59.5
+	elif(gyroSampleRate == 3): rate = 119.0
+	elif(gyroSampleRate == 4): rate = 238.0
+	elif(gyroSampleRate == 5): rate = 476.0
+	elif(gyroSampleRate == 6): rate = 952.0
+	else: rate = 119.0 # Default Value
+
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
-		for ctdr in range (1, gyroSampleRate + 1):
+		for ctdr in range (1, int(rate + 1)):
 			# Collect information from gyroscope
-			while( not( int((ctdr - 1)*(1000.0/gyroSampleRate)) <= localMiliseconds < int(ctdr*(1000.0/gyroSampleRate)) ) ):
+			while( not( int((ctdr - 1)*(1000.0/rate)) <= localMiliseconds < int(ctdr*(1000.0/rate)) ) ):
 				try:
 					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 				except:
@@ -67,13 +87,25 @@ def SetGyroscopeData(dataGyroscope):
 # Setting data from magnetometer
 def SetMagnetometerData(dataMagnetometer):
 	global magnSampleRate
-	sensorCollector = Sensors()
+	sensorCollector = Sensors(accelSampleRate, magnSampleRate)
+
+	rate = 0.625
+	if(magnSampleRate == 0): rate = 0.625
+	elif(magnSampleRate == 1): rate = 1.25
+	elif(magnSampleRate == 2): rate = 2.5
+	elif(magnSampleRate == 3): rate = 5.0
+	elif(magnSampleRate == 4): rate = 10.0
+	elif(magnSampleRate == 5): rate = 20.0
+	elif(magnSampleRate == 6): rate = 40.0
+	elif(magnSampleRate == 7): rate = 80.0
+	else: rate = 20.0 # Default value
+
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
-		for ctdr in range (1, magnSampleRate + 1):
+		for ctdr in range (1, int(rate + 1)):
 			# Collect information from magnetometer
-			while( not( int((ctdr - 1)*(1000.0/magnSampleRate)) <= localMiliseconds < int(ctdr*(1000.0/magnSampleRate)) ) ):
+			while( not( int((ctdr - 1)*(1000.0/rate)) <= localMiliseconds < int(ctdr*(1000.0/rate)) ) ):
 				try:
 					localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 				except:
@@ -150,6 +182,7 @@ def SetNeighbors(dataNeighbors):
 
 # Updating configuration variables from the API
 def ShowId():
+	sense = SenseHat()
 	while(True):
 		sense.show_message(str(raspID))
 
@@ -184,18 +217,18 @@ def SetConfigurationProperties():
 	configuration = []
 	with open("/home/root/configuration.conf", "r") as text:
 	    for line in text:
-	    	if(line != "\n"):
+	    	if(line != "\n" and ("#" not in line)):
 		        value = line.split(":")[1].replace("\n","")
 		        configuration.append(value)
 	# Initiating global configuration variables
 	raspID = int(configuration[0])
 	accelSampleRate = int(configuration[1])
-	gyroSampleRate = int(configuration[2])
-	magnSampleRate = int(configuration[3])
+	gyroSampleRate = accelSampleRate
+	magnSampleRate = int(configuration[2])
 
 # Start necessary variables for the collecting process
 def PrepareOutputs():
-	global raspID, jsonFile, folderAudioName, folderJsonName, sense
+	global raspID, jsonFile, folderAudioName, folderJsonName
 	# Cleaning old outputs
 	subprocess.call('rm -rf /home/root/outputs_node%s' % (str(raspID)), shell=True)
 	subprocess.call('mkdir /home/root/outputs_node%s' % (str(raspID)), shell=True)
@@ -206,10 +239,6 @@ def PrepareOutputs():
 	# Opening JSON file
 	outputName = '/home/root/outputs_node%s/json_node%s.json' % (str(raspID), str(raspID))
 	jsonFile = open(outputName,"w+")
-	
-	# Sense hat initialization
-	sense = SenseHat();
-	sense.set_imu_config(True, True, True)
 
 # Starting multiprocessing for multiple data collection
 def StartProcesses():
@@ -246,12 +275,8 @@ def StartProcesses():
 
 # Main of the application
 if __name__ == '__main__':
-	# Wearable configuration variables 
-	SetConfigurationProperties()	
-	#Running commands for enabling audio and beacon transmission
-	EnableAudio()
-	EnableBeacon()
-	# Preparing audio and json files
-	PrepareOutputs()	
-	# Starting processes
-	StartProcesses()	
+	SetConfigurationProperties()	# Wearable configuration variables 
+	EnableAudio()					# Running commands for enabling audio 
+	EnableBeacon()					# Enabling BLE beacon transmission
+	PrepareOutputs()				# Preparing audio and json files
+	StartProcesses()				# Starting processes

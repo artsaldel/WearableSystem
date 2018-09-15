@@ -1,3 +1,4 @@
+import array
 import smbus
 from datetime import datetime
 
@@ -5,12 +6,109 @@ from datetime import datetime
 # Class for collecting sensors' information
 class Sensors:
 
-    def __init__(self):
+    def __init__(self, accelGyroSampleRate, magnSampleRate):
         self.i2cBus = smbus.SMBus(1)
         # Sensors addresses
         self.GYRO_ADDR = 0x6a
         self.ACCL_ADDR = 0x6a
         self.MAGN_ADDR = 0x1c
+
+        self.SAMPLE_RATE_ACCL_GYRO = 5
+        self.SAMPLE_RATE_MAGN = 1
+
+        self.scratch = array.array('B',[0,0,0,0,0,0])
+        self.scratchInt = array.array('h',[0,0,0])
+
+        self.SCALE_GYRO = [(245,0),(500,1),(2000,3)]
+        self.SCALE_ACCEL = [(2,0),(4,2),(8,3),(16,1)]
+
+        self.CTRL_REG1_G = 0x10
+        self.CTRL_REG4_G = 0x1e
+        self.CTRL_REG1_M = 0x20
+
+        self.FIFO_CTRL_REG = 0x2e
+        self.FIFO_SRC = 0x2f
+
+        self.OUT_ACCL = 0x28
+        self.OUT_GYRO = 0x18 
+        self.OUT_MAGN = 0x28
+
+        self.InitAccelGyro(6)
+        self.InitMagnetometer(6)
+
+    """ 
+    Initalizes Gyro and Accelerator:
+        - sampleRate: 0-6 (off, 14.9Hz, 59.5Hz, 119Hz, 238Hz, 476Hz, 952Hz)
+        - scaleGyro: 0-2 (245dps, 500dps, 2000dps ) 
+        - scaleAccel: 0-3 (+/-2g, +/-4g, +/-8g, +-16g)
+    """
+    def InitAccelGyro(self, sampleRate = 6):
+        
+        scaleAccel =0
+        scaleGyro = 0
+        assert sampleRate <= 6, 'Invalid sampling rate for accel and gyro: %d' % sample_rate
+        mv = self.scratch
+
+        mv[0] = ((sampleRate & 0x07) << 5) | ((self.SCALE_GYRO[scaleGyro][1] & 0x3) << 3) 
+        mv[1:4] = array.array('B', b'\x00\x00\x00') 
+
+        self.i2cBus.write_i2c_block_data(self.GYRO_ADDR, self.CTRL_REG1_G, mv[:5].tolist())
+
+        mv[0] = mv[1] = 0x38
+        mv[2] = ((sampleRate & 7) << 5) | ((self.SCALE_ACCEL[scaleAccel][1] & 0x3) << 3)
+        mv[3] = 0x00
+        mv[4] = 0x4
+        mv[5] = 0x2
+
+        self.i2cBus.write_i2c_block_data(self.ACCL_ADDR, self.CTRL_REG4_G, mv[:6].tolist())
+
+        # Fifo: continous mode (overwrite old data if overflow)
+        self.i2cBus.write_byte_data(self.GYRO_ADDR, self.FIFO_CTRL_REG, 0x00)
+        self.i2cBus.write_byte_data(self.ACCL_ADDR, self.FIFO_CTRL_REG, 0xC0)
+
+        self.scaleGyro = 32768 / self.SCALE_GYRO[scaleGyro][0]
+        self.scaleAccel = 32768 / self.SCALE_ACCEL[scaleAccel][0]
+
+
+    """ 
+    Initalizes Magnetometer:
+        - sample rates = 0-7 (0.625, 1.25, 2.5, 5, 10, 20, 40, 80Hz)
+        - scaling = 0-3 (+/-4, +/-8, +/-12, +/-16 Gauss)
+    """
+    def InitMagnetometer(self, sampleRate = 7):
+        scaleMagnet = 0
+        assert sampleRate < 8, "invalid sample rate: %d (0-7)" % sample_rate
+        mv = self.scratch
+
+        mv[0] = 0x40 | (sampleRate << 2)    # Ctrl1: high performance mode
+        mv[1] = scaleMagnet << 5            # Ctrl2: scale, normal mode, no reset
+        mv[2] = 0x00                        # Ctrl3: continous conversion, no low power, I2C
+        mv[3] = 0x08                        # Ctrl4: high performance z-axis
+        mv[4] = 0x00                        # Ctrl5: no fast read, no block update
+
+        self.i2cBus.write_i2c_block_data(self.MAGN_ADDR, self.CTRL_REG1_M, mv[:5].tolist())
+        self.scaleFactorMagnet = 32768 / ((scaleMagnet+1) * 4 )
+
+    # Return one single accelerometer value
+    def ReadSingleAccelerometer(self):
+        # Returns acceleration vector in gravity units (9.81m/s^2)
+        factor = self.scaleAccel
+        mv = self.i2cBus.read_i2c_block_data(self.ACCL_ADDR, self.OUT_ACCL | 0x80, 16)
+        return (mv[0]/factor, mv[1]/factor, mv[2]/factor)
+
+    # Return one single gyroscope value
+    def ReadSingleGyroscope(self):
+        # Returns gyroscope vector in degrees/sec
+        factor = self.scaleGyro
+        mv = self.i2cBus.read_i2c_block_data(self.GYRO_ADDR, self.OUT_GYRO | 0x80, 16)
+        return (mv[0]/factor, mv[1]/factor, mv[2]/factor)
+
+    # Return one single magnetometer value
+    def ReadSingleMagnetometer(self):
+        # Returns magnetometer vector in gauss. Raw_values: if True, the non-scaled adc values are returned
+        factor = self.scaleFactorMagnet
+        mv = self.i2cBus.read_i2c_block_data(self.MAGN_ADDR, self.OUT_MAGN | 0x80, 16)
+        return (mv[0]/factor, mv[1]/factor, mv[2]/factor)
 
     # Reading a byte from the accelerometer by address
     def ReadAccelerometer(self):

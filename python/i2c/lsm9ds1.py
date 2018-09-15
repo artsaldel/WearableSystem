@@ -126,6 +126,8 @@ class LSM9DS1:
     
     def read_id_magnet(self):
         return self.i2c.readfrom_mem(self.address_magnet, WHO_AM_I, 1)
+                     
+
                         
     def read_magnet(self):
         """Returns magnetometer vector in gauss.
