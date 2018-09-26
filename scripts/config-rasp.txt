@@ -67,12 +67,11 @@ Enabling audio:
 	# Uncomment next line as
 	dtparam=audio=off
 
-	# Then reboot 
+	# Change next lines as
+	arm_freq_min=200
+	core_freq_min=200
+	sdram_freq_min=200
 
-### Changing configuration of the sense hat
-cd /home/root/.config/sense_hat
-vi RTIMULib.ini
-# go to LSM9DS1 settings and change as needed
-
-
+	# Then 
+	reboot 
 

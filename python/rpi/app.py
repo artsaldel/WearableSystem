@@ -1,6 +1,7 @@
 import time
 import blescan
 import subprocess
+import bletransmit
 import multiprocessing
 from sensors import Sensors
 from datetime import datetime
@@ -32,16 +33,7 @@ def GetTimeDrift():
 def SetAccelerometerData(dataAccelerometer):
 	global accelSampleRate
 	sensorCollector = Sensors(accelSampleRate, magnSampleRate)
-
-	rate = 14.9
-	if(accelSampleRate == 1): rate = 14.9
-	elif(accelSampleRate == 2): rate = 59.5
-	elif(accelSampleRate == 3): rate = 119.0
-	elif(accelSampleRate == 4): rate = 238.0
-	elif(accelSampleRate == 5): rate = 476.0
-	elif(accelSampleRate == 6): rate = 952.0
-	else: rate = 119.0 # Default Value
-
+	rate = sensorCollector.GetAccelGyroFreqByValue(accelSampleRate)
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
@@ -54,22 +46,14 @@ def SetAccelerometerData(dataAccelerometer):
 					pass
 			if(ctdr == 1):
 				del dataAccelerometer[:]
-			dataAccelerometer.append(sensorCollector.ReadAccelerometer())
+			data = sensorCollector.ReadAccelerometer(ctdr)
+			dataAccelerometer.append(data)
 
 # Setting data from gyroscope
 def SetGyroscopeData(dataGyroscope):
 	global gyroSampleRate
 	sensorCollector = Sensors(gyroSampleRate, magnSampleRate)
-
-	rate = 14.9
-	if(gyroSampleRate == 1): rate = 14.9
-	elif(gyroSampleRate == 2): rate = 59.5
-	elif(gyroSampleRate == 3): rate = 119.0
-	elif(gyroSampleRate == 4): rate = 238.0
-	elif(gyroSampleRate == 5): rate = 476.0
-	elif(gyroSampleRate == 6): rate = 952.0
-	else: rate = 119.0 # Default Value
-
+	rate = sensorCollector.GetAccelGyroFreqByValue(gyroSampleRate)
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
@@ -82,24 +66,13 @@ def SetGyroscopeData(dataGyroscope):
 					pass
 			if(ctdr == 1):
 				del dataGyroscope[:]
-			dataGyroscope.append(sensorCollector.ReadGyroscope())
+			dataGyroscope.append(sensorCollector.ReadGyroscope(ctdr))
 
 # Setting data from magnetometer
 def SetMagnetometerData(dataMagnetometer):
 	global magnSampleRate
 	sensorCollector = Sensors(accelSampleRate, magnSampleRate)
-
-	rate = 0.625
-	if(magnSampleRate == 0): rate = 0.625
-	elif(magnSampleRate == 1): rate = 1.25
-	elif(magnSampleRate == 2): rate = 2.5
-	elif(magnSampleRate == 3): rate = 5.0
-	elif(magnSampleRate == 4): rate = 10.0
-	elif(magnSampleRate == 5): rate = 20.0
-	elif(magnSampleRate == 6): rate = 40.0
-	elif(magnSampleRate == 7): rate = 80.0
-	else: rate = 20.0 # Default value
-
+	rate = sensorCollector.GetMagnByValue(magnSampleRate)
 	while(True):
 		localMiliseconds = int(str(datetime.now()).replace(".",":")[:-3][-3:])
 		# Wait til a second pass
@@ -112,7 +85,7 @@ def SetMagnetometerData(dataMagnetometer):
 					pass
 			if(ctdr == 1):
 				del dataMagnetometer[:]
-			dataMagnetometer.append(sensorCollector.ReadMagnetometer())
+			dataMagnetometer.append(sensorCollector.ReadMagnetometer(ctdr))
 
 # Get sensors information using sense hat
 def SetSensorData(dataNeighbors, dataAccelerometer, dataGyroscope, dataMagnetometer):
@@ -144,6 +117,10 @@ def SetSensorData(dataNeighbors, dataAccelerometer, dataGyroscope, dataMagnetome
 			# Save the information as JSON format
 			senseHatData = '"Accelerometer" : [%s],\n"Gyroscope" : [%s],\n"Magnetometer" : [%s]' % (str(dataAccelerometer).replace("'",""), str(dataGyroscope).replace("'",""), str(dataMagnetometer).replace("'",""))
 			outputData += '{\n"Local time" : "%s",\n"Node id" : %d,\n"NTP time drift" : "%s",\n"Application data" : {\n%s,\n%s}\n},\n\n\n' % (firstTime, raspID, timeDrift, str(dataNeighbors['neighbors']), str(senseHatData))
+			# Cleaning data
+			dataAccelerometer[:] = [] 
+			dataGyroscope[:] = [] 
+			dataMagnetometer[:] = [] 
 			# Write the information into the JSON file every 5 seconds
 			localCtdr += 1
 			if (localCtdr == 5):
@@ -175,7 +152,7 @@ def SetAudio():
 
 # Get neighbors using BLE scanner
 def SetNeighbors(dataNeighbors):
-	seconds = 1
+	seconds = 2
 	while(True):
 		neighbors = blescan.GetNearBeacons(seconds)
 		dataNeighbors['neighbors'] = '"Neighbors" : [%s]' % (str(neighbors))
@@ -183,8 +160,9 @@ def SetNeighbors(dataNeighbors):
 # Updating configuration variables from the API
 def ShowId():
 	sense = SenseHat()
+	sense.low_light = True
 	while(True):
-		sense.show_message(str(raspID))
+		sense.show_message(str(raspID), text_colour=[100, 100, 190])
 
 # Running commands for enabling audio
 def EnableAudio():
@@ -198,15 +176,7 @@ def EnableAudio():
 def EnableBeacon():
 	global raspID
 	try:
-		subprocess.call("hciattach /dev/ttyAMA0 bcm43xx 115200 noflow -", shell=True)
-		subprocess.call("hciconfig hci0 up", shell=True)
-		subprocess.call("hciconfig hci0 leadv 3", shell=True)
-		subprocess.call("hciconfig hci0 noscan", shell=True)
-		hexID = str(hex(raspID).split('x')[-1]).zfill(4)
-		commandBeacon = 'hcitool -i hci0 cmd 0x08 0x0008 1e 02 01 1a 1a ff 4c 00 02 15 e2 c5 6d b5 df fb 48 d2 b0 60 d0 f5 a7 10 96 e0 00 00 %s %s c5 00 00 00 00 00 00 00 00 00 00 00 00 00' % (hexID[:2], hexID[2:])
-		subprocess.call(commandBeacon, shell=True)
-		subprocess.call("hcitool -i hci0 cmd 0x08 0x0006 40 01 40 01 03 00 00 00 00 00 00 00 00 07 00", shell=True)
-		subprocess.call("hcitool -i hci0 cmd 0x08 0x000a 01", shell=True)
+		bletransmit.StartTransmission(raspID)
 	except:
 		print("No BLE device")
 

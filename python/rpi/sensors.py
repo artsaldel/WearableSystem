@@ -103,6 +103,17 @@ class Sensors:
         mv = self.i2cBus.read_i2c_block_data(self.GYRO_ADDR, self.OUT_GYRO | 0x80, 16)
         return (mv[0]/factor, mv[1]/factor, mv[2]/factor)
 
+    # Return accelerometer and gyroscope fifo data
+    def ReadFifo(self):
+        while(True):
+            fifoState = self.i2cBus.read_i2c_block_data(self.ACCL_ADDR, self.FIFO_SRC, 1)[0]
+            print(fifoState)
+            if(fifoState & 0x3f):
+                yield self.ReadSingleGyroscope(),self.ReadSingleAccelerometer()
+                print("Available samples = %d" % (fifo_state & 0x1f))
+            else:
+                break
+
     # Return one single magnetometer value
     def ReadSingleMagnetometer(self):
         # Returns magnetometer vector in gauss. Raw_values: if True, the non-scaled adc values are returned
@@ -111,7 +122,7 @@ class Sensors:
         return (mv[0]/factor, mv[1]/factor, mv[2]/factor)
 
     # Reading a byte from the accelerometer by address
-    def ReadAccelerometer(self):
+    def ReadAccelerometer(self, numberLecture):
         acc_l = self.i2cBus.read_byte_data(self.ACCL_ADDR, 0x28)
         acc_h = self.i2cBus.read_byte_data(self.ACCL_ADDR, 0x29)
         acc_combined = (acc_l | acc_h << 8)
@@ -129,10 +140,10 @@ class Sensors:
 
         localTime = str(datetime.now()).replace(".",":")[:-3]
 
-        return '{"Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (localTime, str(xValue), str(yValue), str(zValue))
+        return '{"Number lecture": %d, "Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (numberLecture, localTime, str(xValue), str(yValue), str(zValue))
 
     # Reading a byte from the gyroscope by address
-    def ReadGyroscope(self):
+    def ReadGyroscope(self, numberLecture):
         gyr_l = self.i2cBus.read_byte_data(self.GYRO_ADDR, 0x18)
         gyr_h = self.i2cBus.read_byte_data(self.GYRO_ADDR, 0x19)
         gyr_combined = (gyr_l | gyr_h << 8)
@@ -150,10 +161,10 @@ class Sensors:
 
         localTime = str(datetime.now()).replace(".",":")[:-3]
 
-        return '{"Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (localTime, str(xValue), str(yValue), str(zValue))
+        return '{"Number lecture": %d, "Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (numberLecture, localTime, str(xValue), str(yValue), str(zValue))
 
     # Reading a byte from the magnetometer by address
-    def ReadMagnetometer(self):
+    def ReadMagnetometer(self, numberLecture):
         mag_l = self.i2cBus.read_byte_data(self.MAGN_ADDR, 0x28)
         mag_h = self.i2cBus.read_byte_data(self.MAGN_ADDR, 0x29)
         mag_combined = (mag_l | mag_h << 8)
@@ -171,4 +182,30 @@ class Sensors:
 
         localTime = str(datetime.now()).replace(".",":")[:-3]
 
-        return '{"Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (localTime, str(xValue), str(yValue), str(zValue))
+        return '{"Number lecture": %d, "Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (numberLecture, localTime, str(xValue), str(yValue), str(zValue))
+
+    # Get the frequency of the accelerometer and gyroscope by the value
+    def GetAccelGyroFreqByValue(self, value):
+        rate = 14.9
+        if(value == 1): rate = 14.9
+        elif(value == 2): rate = 59.5
+        elif(value == 3): rate = 119.0
+        elif(value == 4): rate = 238.0
+        elif(value == 5): rate = 476.0
+        elif(value == 6): rate = 952.0
+        else: rate = 14.9 # Default Value
+        return rate
+
+    # Get the frequency of the magnetometer by the value
+    def GetMagnByValue(self, value):    
+        rate = 0.625
+        if(value == 0): rate = 0.625
+        elif(value == 1): rate = 1.25
+        elif(value == 2): rate = 2.5
+        elif(value == 3): rate = 5.0
+        elif(value == 4): rate = 10.0
+        elif(value == 5): rate = 20.0
+        elif(value == 6): rate = 40.0
+        elif(value == 7): rate = 80.0
+        else: rate = 20.0 # Default value
+        return rate

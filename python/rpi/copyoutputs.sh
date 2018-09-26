@@ -1,0 +1,1 @@
+scp -r outputs_node*/ arturo@192.168.0.115:/home/arturo/Escritorio
