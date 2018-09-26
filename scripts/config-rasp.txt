@@ -61,8 +61,7 @@ Enabling audio:
 	cd /boot/
 	mkdir rpi
 	mount /dev/mmcblk0p1 /boot/rpi
-	cd rpi
-	vi config.txt
+	vi /boot/rpi/config.txt
 
 	# Uncomment next line as
 	dtparam=audio=off
@@ -71,6 +70,12 @@ Enabling audio:
 	arm_freq_min=200
 	core_freq_min=200
 	sdram_freq_min=200
+
+	# Edit cmdline file
+	vi /boot/rpi/cmdline.txt
+
+	# Add below text at the end of the line to select # of cores to use
+	maxcpus=4
 
 	# Then 
 	reboot 
