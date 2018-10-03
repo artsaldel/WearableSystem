@@ -73,12 +73,12 @@ def GetNearBeacons(seconds):
         # No access to bluettoth device
         print("No access to bluetooth device")
     EnableScan(sock)
-    beaconList = ScanBeacons(sock, seconds * 40)
+    beaconList = ScanBeacons(sock, seconds * 50)
     return beaconList
 
 if __name__ == '__main__':
     while(True):
         print("-----------")
-        beaconList = GetNearBeacons(1)
+        beaconList = GetNearBeacons(2)
         for beacon in beaconList:
             print(beacon)
