@@ -58,18 +58,17 @@ Execute next command to initiate script at booting:
 
 Enabling audio:
 
-	cd /boot/
-	mkdir rpi
+	mkdir /boot/rpi
 	mount /dev/mmcblk0p1 /boot/rpi
 	vi /boot/rpi/config.txt
 
 	# Uncomment next line as
-	dtparam=audio=off
+	dtparam=audio=off		-> line 1066
 
 	# Change next lines as
-	arm_freq_min=200
-	core_freq_min=200
-	sdram_freq_min=200
+	arm_freq_min=200       	-> line 759
+	core_freq_min=200		-> line 782
+	sdram_freq_min=200		-> line 817
 
 	# Edit cmdline file
 	vi /boot/rpi/cmdline.txt
