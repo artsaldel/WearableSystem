@@ -46,8 +46,7 @@ def SetAccelerometerData(dataAccelerometer):
 					pass
 			if(ctdr == 1):
 				del dataAccelerometer[:]
-			data = sensorCollector.ReadAccelerometer(ctdr)
-			dataAccelerometer.append(data)
+			dataAccelerometer.append(sensorCollector.ReadAccelerometer())
 
 # Setting data from gyroscope
 def SetGyroscopeData(dataGyroscope):
@@ -66,7 +65,7 @@ def SetGyroscopeData(dataGyroscope):
 					pass
 			if(ctdr == 1):
 				del dataGyroscope[:]
-			dataGyroscope.append(sensorCollector.ReadGyroscope(ctdr))
+			dataGyroscope.append(sensorCollector.ReadGyroscope())
 
 # Setting data from magnetometer
 def SetMagnetometerData(dataMagnetometer):
@@ -85,7 +84,7 @@ def SetMagnetometerData(dataMagnetometer):
 					pass
 			if(ctdr == 1):
 				del dataMagnetometer[:]
-			dataMagnetometer.append(sensorCollector.ReadMagnetometer(ctdr))
+			dataMagnetometer.append(sensorCollector.ReadMagnetometer())
 
 # Get sensors information using sense hat
 def SetSensorData(dataNeighbors, dataAccelerometer, dataGyroscope, dataMagnetometer):
@@ -110,7 +109,7 @@ def SetSensorData(dataNeighbors, dataAccelerometer, dataGyroscope, dataMagnetome
 					pass
 			# Time for saving lecture
 			if(ctdr == 1):
-				firstTime = str(datetime.now()).replace(".",":")[:-3]
+				firstTime = str(datetime.now()).replace(".",":")[:-3] + " UTC"
 		if(globalCtdr > 2):
 			# Time drift against NTP server
 			timeDrift = GetTimeDrift()

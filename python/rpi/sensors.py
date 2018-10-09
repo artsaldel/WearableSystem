@@ -122,7 +122,7 @@ class Sensors:
         return (mv[0]/factor, mv[1]/factor, mv[2]/factor)
 
     # Reading a byte from the accelerometer by address
-    def ReadAccelerometer(self, numberLecture):
+    def ReadAccelerometer(self):
         acc_l = self.i2cBus.read_byte_data(self.ACCL_ADDR, 0x28)
         acc_h = self.i2cBus.read_byte_data(self.ACCL_ADDR, 0x29)
         acc_combined = (acc_l | acc_h << 8)
@@ -140,10 +140,10 @@ class Sensors:
 
         localTime = str(datetime.now()).replace(".",":")[:-3]
 
-        return '{"Number lecture": %d, "Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (numberLecture, localTime, str(xValue), str(yValue), str(zValue))
+        return '{"x" : %s, "y" : %s, "z" : %s}' % (str(xValue), str(yValue), str(zValue))
 
     # Reading a byte from the gyroscope by address
-    def ReadGyroscope(self, numberLecture):
+    def ReadGyroscope(self):
         gyr_l = self.i2cBus.read_byte_data(self.GYRO_ADDR, 0x18)
         gyr_h = self.i2cBus.read_byte_data(self.GYRO_ADDR, 0x19)
         gyr_combined = (gyr_l | gyr_h << 8)
@@ -161,10 +161,10 @@ class Sensors:
 
         localTime = str(datetime.now()).replace(".",":")[:-3]
 
-        return '{"Number lecture": %d, "Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (numberLecture, localTime, str(xValue), str(yValue), str(zValue))
+        return '{"x" : %s, "y" : %s, "z" : %s}' % (str(xValue), str(yValue), str(zValue))
 
     # Reading a byte from the magnetometer by address
-    def ReadMagnetometer(self, numberLecture):
+    def ReadMagnetometer(self):
         mag_l = self.i2cBus.read_byte_data(self.MAGN_ADDR, 0x28)
         mag_h = self.i2cBus.read_byte_data(self.MAGN_ADDR, 0x29)
         mag_combined = (mag_l | mag_h << 8)
@@ -182,7 +182,7 @@ class Sensors:
 
         localTime = str(datetime.now()).replace(".",":")[:-3]
 
-        return '{"Number lecture": %d, "Time": "%s", "x" : %s, "y" : %s, "z" : %s}' % (numberLecture, localTime, str(xValue), str(yValue), str(zValue))
+        return '{"x" : %s, "y" : %s, "z" : %s}' % (str(xValue), str(yValue), str(zValue))
 
     # Get the frequency of the accelerometer and gyroscope by the value
     def GetAccelGyroFreqByValue(self, value):
