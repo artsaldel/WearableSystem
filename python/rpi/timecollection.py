@@ -1,3 +1,8 @@
+###########################################################
+# Wearable device - Adquiring non-social signals
+# Arturo Salas Delgado
+# Collaboration of Tecnologico de Costa Rica and TU Delft
+###########################################################
 
 from datetime import datetime
 import time

@@ -1,3 +1,9 @@
+###########################################################
+# Wearable device - Adquiring non-social signals
+# Arturo Salas Delgado
+# Collaboration of Tecnologico de Costa Rica and TU Delft
+###########################################################
+
 import array
 import smbus
 from datetime import datetime
